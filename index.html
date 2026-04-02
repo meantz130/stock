@@ -17,13 +17,13 @@
             --text-dark: #1f2937;
             --text-light: #9ca3af;
             --white: #ffffff;
-            --active-item: #374151;
+            --active-item: #2d3139; /* 하이라이트 색상 강화 */
             --transition: all 0.3s ease;
         }
 
         body { margin: 0; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; background-color: var(--main-bg); overflow: hidden; }
 
-        /* 사이드바 및 모바일 대응 */
+        /* 사이드바 스타일 및 선택 하이라이트 */
         #sidebar { 
             width: 280px; background: var(--sidebar-bg); color: white; 
             display: flex; flex-direction: column; flex-shrink: 0;
@@ -41,52 +41,60 @@
             padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #2d3139; 
             transition: var(--transition); border-left: 4px solid transparent;
         }
-        .list-item.active { background: var(--active-item); border-left: 4px solid var(--accent); }
+        .list-item:hover { background: #252830; }
+        /* 선택 시 하이라이트 효과 */
+        .list-item.active { 
+            background: var(--active-item); 
+            border-left: 4px solid var(--accent);
+            font-weight: bold;
+        }
 
         /* 메인 영역 */
         #main-content { flex: 1; padding: 15px; overflow-y: auto; width: 100%; }
         .top-bar { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .menu-btn { display: none; background: var(--sidebar-bg); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .menu-btn { display: none; background: var(--sidebar-bg); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 1rem; }
         
         @media (max-width: 768px) { .menu-btn { display: block; } }
 
-        /* 지표 대시보드 (모바일 2열) */
+        /* 지표 대시보드 중앙 정렬 및 디자인 */
+        .market-container { display: flex; justify-content: center; width: 100%; margin-bottom: 25px; }
         .market-dashboard { 
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; 
-            margin-bottom: 20px; max-width: 1000px;
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; 
+            width: 100%; max-width: 900px;
         }
         @media (min-width: 1024px) { .market-dashboard { grid-template-columns: repeat(4, 1fr); } }
 
-        .market-card { background: var(--sidebar-bg); color: white; padding: 12px; border-radius: 12px; text-align: center; }
-        .market-val { font-size: 1.1rem; font-weight: bold; display: block; margin: 4px 0; }
-        .up { color: #ff4d4d; } .down { color: #4d94ff; }
+        .market-card { background: var(--sidebar-bg); color: white; padding: 15px; border-radius: 14px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .market-val { font-size: 1.2rem; font-weight: bold; display: block; margin: 6px 0; color: var(--accent); }
+        .market-chg { font-size: 0.8rem; font-weight: bold; }
 
-        /* 카드 및 편집기 */
-        .editor-container { max-width: 800px; margin: 0 auto; display: none; }
-        .card { background: var(--white); padding: 18px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        /* 편집기 영역 */
+        .editor-container { max-width: 900px; margin: 0 auto; display: none; }
+        .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
         
+        /* 종목 타이틀 및 삭제 버튼 한 줄 정리 */
+        .editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
+        #item-title { flex: 1; font-size: 1.6rem; font-weight: 900; border: none; border-bottom: 2px solid transparent; }
+        #item-title:focus { border-bottom-color: var(--accent); }
+        .delete-btn { color: var(--danger); background: #fee2e2; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+
         .price-section { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 600px) { .price-section { grid-template-columns: 1fr 1fr; } }
-
-        .price-box { border: 1px solid #edf2f7; padding: 12px; border-radius: 12px; background: #fafafa; }
+        .price-box { border: 1px solid #edf2f7; padding: 15px; border-radius: 12px; background: #fafafa; }
         
-        input, textarea { 
-            width: 100%; border: none; border-bottom: 2px solid #eee; padding: 8px 0; 
-            font-size: 1rem; outline: none; background: transparent;
-        }
+        input, textarea { width: 100%; border: none; border-bottom: 2px solid #eee; padding: 10px 0; font-size: 1rem; outline: none; background: transparent; }
         input:focus, textarea:focus { border-bottom-color: var(--accent); }
-        textarea { resize: none; font-family: inherit; }
 
-        .action-btn { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
-        .history-item { background: #f1f5f9; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .action-btn { background: var(--accent); color: white; border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 1rem; }
+        .history-item { background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; display: flex; justify-content: space-between; margin-bottom: 8px; border: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <div style="padding:20px; font-weight:900; font-size:1.2rem; border-bottom:1px solid #2d3139; display:flex; justify-content:space-between; align-items:center;">
+    <div style="padding:25px 20px; font-weight:900; font-size:1.3rem; border-bottom:1px solid #2d3139; display:flex; justify-content:space-between; align-items:center;">
         <span>STOCK HUB</span>
-        <button onclick="addNewItem()" style="background:var(--accent); color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">+ 추가</button>
+        <button onclick="addNewItem()" style="background:var(--accent); color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">+ 추가</button>
     </div>
     <div id="item-list"></div>
 </div>
@@ -95,81 +103,88 @@
 <div id="main-content">
     <div class="top-bar">
         <button class="menu-btn" onclick="toggleMenu()">☰ 메뉴</button>
-        <h2 style="margin:0; font-size:1.2rem;">Market Overview</h2>
+        <h2 style="margin:0; font-size:1.3rem; font-weight:800;">Market Overview</h2>
     </div>
 
-    <div class="market-dashboard">
-        <div class="market-card">
-            <span style="font-size:0.7rem; color:var(--text-light)">KOSPI</span>
-            <span id="idx-kospi" class="market-val">---</span>
-            <button onclick="updateIndex('kospi')" style="font-size:0.6rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; padding:2px 6px;">Check</button>
-        </div>
-        <div class="market-card">
-            <span style="font-size:0.7rem; color:var(--text-light)">NASDAQ</span>
-            <span id="idx-nasdaq" class="market-val">---</span>
-            <button onclick="updateIndex('nasdaq')" style="font-size:0.6rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; padding:2px 6px;">Check</button>
-        </div>
-        <div class="market-card">
-            <span style="font-size:0.7rem; color:var(--text-light)">S&P 500</span>
-            <span id="idx-snp" class="market-val">---</span>
-            <button onclick="updateIndex('snp')" style="font-size:0.6rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; padding:2px 6px;">Check</button>
-        </div>
-        <div class="market-card">
-            <span style="font-size:0.7rem; color:var(--text-light)">USD/KRW</span>
-            <span id="idx-usd" class="market-val">---</span>
-            <button onclick="updateIndex('usd')" style="font-size:0.6rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; padding:2px 6px;">Check</button>
+    <div class="market-container">
+        <div class="market-dashboard">
+            <div class="market-card">
+                <span style="font-size:0.75rem; color:var(--text-light); font-weight:bold;">KOSPI</span>
+                <span id="idx-kospi" class="market-val">---</span>
+                <div id="chg-kospi" class="market-chg">--</div>
+                <button onclick="updateIndex('kospi')" style="margin-top:8px; font-size:0.65rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">Update</button>
+            </div>
+            <div class="market-card">
+                <span style="font-size:0.75rem; color:var(--text-light); font-weight:bold;">NASDAQ</span>
+                <span id="idx-nasdaq" class="market-val">---</span>
+                <div id="chg-nasdaq" class="market-chg">--</div>
+                <button onclick="updateIndex('nasdaq')" style="margin-top:8px; font-size:0.65rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">Update</button>
+            </div>
+            <div class="market-card">
+                <span style="font-size:0.75rem; color:var(--text-light); font-weight:bold;">S&P 500</span>
+                <span id="idx-snp" class="market-val">---</span>
+                <div id="chg-snp" class="market-chg">--</div>
+                <button onclick="updateIndex('snp')" style="margin-top:8px; font-size:0.65rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">Update</button>
+            </div>
+            <div class="market-card">
+                <span style="font-size:0.75rem; color:var(--text-light); font-weight:bold;">USD/KRW</span>
+                <span id="idx-usd" class="market-val">---</span>
+                <div id="chg-usd" class="market-chg">--</div>
+                <button onclick="updateIndex('usd')" style="margin-top:8px; font-size:0.65rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">Update</button>
+            </div>
         </div>
     </div>
 
-    <div id="placeholder" style="text-align: center; margin-top: 10vh; color: #cbd5e1;">
-        <p style="font-size:3rem;">📈</p>
-        <p>종목을 선택해 주세요.</p>
+    <div id="placeholder" style="text-align: center; margin-top: 12vh; color: #cbd5e1;">
+        <p style="font-size:4rem; margin-bottom:10px;">📉</p>
+        <p style="font-weight:bold;">분석할 종목을 리스트에서 선택하거나<br>새로운 종목을 추가해 주세요.</p>
     </div>
 
     <div class="editor-container" id="editor">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <input type="text" id="item-title" style="font-size:1.5rem; font-weight:900;" oninput="updateField('title', this.value)">
-            <button onclick="deleteStock()" style="color:var(--danger); border:none; background:none; font-weight:bold; cursor:pointer;">삭제</button>
+        <div class="editor-header">
+            <input type="text" id="item-title" placeholder="종목명 입력" oninput="updateField('title', this.value)">
+            <button class="delete-btn" onclick="deleteStock()">종목 삭제</button>
         </div>
 
         <div class="card">
             <div class="price-section">
                 <div class="price-box">
-                    <label style="font-size:0.75rem; color:var(--entry); font-weight:bold;">🎯 희망 진입가</label>
-                    <input type="number" id="entry-price" oninput="updateField('entryPrice', this.value)">
-                    <div id="profit-tag" style="margin-top:10px; font-weight:bold; font-size:0.9rem;"></div>
+                    <label style="font-size:0.8rem; color:var(--entry); font-weight:bold;">🎯 희망 진입가</label>
+                    <input type="number" id="entry-price" placeholder="목표 매수가" oninput="updateField('entryPrice', this.value)">
+                    <div id="profit-tag" style="margin-top:12px; font-weight:bold; font-size:1rem;"></div>
                 </div>
                 <div class="price-box">
-                    <label style="font-size:0.75rem; color:var(--accent); font-weight:bold;">📢 현재가 확인</label>
-                    <span id="current-price-view" style="font-size:1.2rem; font-weight:bold; display:block; margin:5px 0;">0 원</span>
-                    <button class="action-btn" style="margin-top:5px; padding:8px;" onclick="fetchLivePrice()">업데이트</button>
+                    <label style="font-size:0.8rem; color:var(--accent); font-weight:bold;">📢 실시간 현재가 확인</label>
+                    <span id="current-price-view" style="font-size:1.4rem; font-weight:800; display:block; margin:8px 0;">0 원</span>
+                    <button class="action-btn" style="margin-top:5px; padding:10px;" onclick="fetchLivePrice()">가격 업데이트</button>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <label style="font-size:0.75rem; font-weight:bold; color:var(--text-light);">📝 종목 메모</label>
-            <textarea id="field-memo" rows="3" placeholder="매매 전략이나 뉴스 메모..." oninput="updateField('memo', this.value)"></textarea>
+            <label style="font-size:0.8rem; font-weight:bold; color:var(--text-light);">📝 투자 전략 및 메모</label>
+            <textarea id="field-memo" rows="4" placeholder="재료, 일정, 매매 전략 등을 자유롭게 기록하세요..." oninput="updateField('memo', this.value)"></textarea>
         </div>
 
         <div class="card">
-            <label style="font-size:0.75rem; font-weight:bold; color:var(--text-light);">📅 수동 종가 기록 (Enter)</label>
-            <input type="number" id="manual-close-input" onkeydown="handleManualSave(event)">
-            <div id="history-list" style="margin-top:12px;"></div>
+            <label style="font-size:0.8rem; font-weight:bold; color:var(--text-light);">📅 수동 종가 기록 (금액 입력 후 Enter)</label>
+            <input type="number" id="manual-close-input" placeholder="오늘의 종가 기록하기" onkeydown="handleManualSave(event)">
+            <div id="history-list" style="margin-top:15px;"></div>
         </div>
 
         <div class="card">
-            <label style="font-size:0.75rem; font-weight:bold; color:var(--text-light);">🚀 목표가</label>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-                <input type="number" id="t1" placeholder="1차" oninput="updateField('t1', this.value)">
-                <input type="number" id="t2" placeholder="2차" oninput="updateField('t2', this.value)">
-                <input type="number" id="t3" placeholder="3차" oninput="updateField('t3', this.value)">
+            <label style="font-size:0.8rem; font-weight:bold; color:var(--text-light);">🚀 목표 매도가</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                <input type="number" id="t1" placeholder="1차 목표" oninput="updateField('t1', this.value)">
+                <input type="number" id="t2" placeholder="2차 목표" oninput="updateField('t2', this.value)">
+                <input type="number" id="t3" placeholder="3차 목표" oninput="updateField('t3', this.value)">
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // Firebase 초기 설정
     const firebaseConfig = {
         apiKey: "AIzaSyDIgzZzkJCNl_N2CTJpQzXYrxmymBqlq4A",
         authDomain: "stock-81b2d.firebaseapp.com",
@@ -180,27 +195,41 @@
     const db = firebase.database();
     let items = [], currentId = null;
 
+    // 사이드바 토글 (모바일 전용)
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
 
+    // 마켓 지표 업데이트 함수 (시각적 일관성 부여)
     function updateIndex(type) {
         const data = {
-            kospi: ["2,752.12", "+1.2%"], nasdaq: ["16,340", "-0.8%"],
-            snp: ["5,204", "+0.1%"], usd: ["1,345", "+0.4%"]
+            kospi: ["2,752.12", "+1.24%", "up"],
+            nasdaq: ["16,340.20", "-0.82%", "down"],
+            snp: ["5,204.34", "+0.15%", "up"],
+            usd: ["1,345.50", "+0.42%", "up"]
         };
-        document.getElementById(`idx-${type}`).innerText = data[type][0];
+        const valEl = document.getElementById(`idx-${type}`);
+        const chgEl = document.getElementById(`chg-${type}`);
+        
+        valEl.innerText = data[type][0];
+        chgEl.innerText = data[type][1];
+        chgEl.className = `market-chg ${data[type][2] === 'up' ? 'up' : 'down'}`;
+        valEl.style.color = data[type][2] === 'up' ? 'var(--danger)' : 'var(--target)';
     }
 
+    // 종목별 실시간 현재가 시뮬레이션
     function fetchLivePrice() {
         if(!currentId) return;
-        const livePrice = Math.floor(Math.random() * 50000) + 30000;
+        const livePrice = Math.floor(Math.random() * 60000) + 40000;
         document.getElementById('current-price-view').innerText = livePrice.toLocaleString() + " 원";
+        
         const entry = document.getElementById('entry-price').value;
         if(entry > 0) {
             const rate = ((livePrice - entry) / entry * 100).toFixed(2);
-            document.getElementById('profit-tag').innerHTML = `수익률: <span style="color:${rate >= 0 ? 'var(--danger)' : 'var(--target)'}">${rate}%</span>`;
+            const color = rate >= 0 ? 'var(--danger)' : 'var(--target)';
+            document.getElementById('profit-tag').innerHTML = `현재 수익률: <span style="color:${color}">${rate}%</span>`;
         }
     }
 
+    // 종가 수동 기록 (Enter 입력 시 저장)
     function handleManualSave(e) {
         if(e.key === 'Enter' && e.target.value) {
             const now = new Date();
@@ -210,6 +239,7 @@
         }
     }
 
+    // Firebase 실시간 데이터 연동
     db.ref('stocks').on('value', (snap) => {
         const data = snap.val();
         items = data ? Object.keys(data).map(k => ({id:k, ...data[k]})).sort((a,b)=>b.timestamp-a.timestamp) : [];
@@ -217,52 +247,77 @@
         if(currentId) syncEditor();
     });
 
+    // 종목 리스트 렌더링
     function renderList() {
         const container = document.getElementById('item-list');
         container.innerHTML = '';
         items.forEach(item => {
             const div = document.createElement('div');
+            // 현재 선택된 항목에 'active' 클래스 부여
             div.className = `list-item ${item.id === currentId ? 'active' : ''}`;
-            div.onclick = () => { currentId = item.id; selectItem(); if(window.innerWidth <= 768) toggleMenu(); };
-            div.innerHTML = `<strong>${item.title || "무제"}</strong><br><small>${Number(item.entryPrice).toLocaleString()}원</small>`;
+            div.onclick = () => { 
+                currentId = item.id; 
+                selectItem(); 
+                if(window.innerWidth <= 768) toggleMenu(); 
+            };
+            div.innerHTML = `<strong>${item.title || "무제목 종목"}</strong><br><small>진입희망: ${Number(item.entryPrice).toLocaleString()}원</small>`;
             container.appendChild(div);
         });
     }
 
+    // 종목 선택 시 편집기 활성화
     function selectItem() {
         document.getElementById('placeholder').style.display = 'none';
         document.getElementById('editor').style.display = 'block';
         syncEditor();
     }
 
+    // 편집기 데이터 동기화
     function syncEditor() {
         const item = items.find(i => i.id === currentId);
         if(!item) return;
-        document.getElementById('item-title').value = item.title || "";
-        document.getElementById('entry-price').value = item.entryPrice || "";
-        document.getElementById('field-memo').value = item.memo || "";
-        document.getElementById('t1').value = item.t1 || "";
-        document.getElementById('t2').value = item.t2 || "";
-        document.getElementById('t3').value = item.t3 || "";
+        
+        // 입력 필드 값 채우기 (포커스 중인 필드는 제외하여 타이핑 방해 방지)
+        if(document.activeElement.id !== 'item-title') document.getElementById('item-title').value = item.title || "";
+        if(document.activeElement.id !== 'entry-price') document.getElementById('entry-price').value = item.entryPrice || "";
+        if(document.activeElement.id !== 'field-memo') document.getElementById('field-memo').value = item.memo || "";
+        if(document.activeElement.id !== 't1') document.getElementById('t1').value = item.t1 || "";
+        if(document.activeElement.id !== 't2') document.getElementById('t2').value = item.t2 || "";
+        if(document.activeElement.id !== 't3') document.getElementById('t3').value = item.t3 || "";
 
+        // 히스토리 리스트 업데이트
         const hList = document.getElementById('history-list');
         hList.innerHTML = '';
         if(item.manualHistory) {
             Object.entries(item.manualHistory).reverse().slice(0, 5).forEach(([key, val]) => {
                 const div = document.createElement('div');
                 div.className = 'history-item';
-                div.innerHTML = `<span>${val.date}</span> <b>${Number(val.price).toLocaleString()}원</b> <span style="color:var(--danger); cursor:pointer;" onclick="deleteHistory('${key}')">×</span>`;
+                div.innerHTML = `<span>${val.date}</span> <b>${Number(val.price).toLocaleString()}원</b> <span style="color:var(--danger); cursor:pointer; font-weight:bold;" onclick="deleteHistory('${key}')">삭제</span>`;
                 hList.appendChild(div);
             });
         }
     }
 
+    // 필드 업데이트 함수
     function updateField(f, v) { db.ref(`stocks/${currentId}`).update({ [f]: v, timestamp: Date.now() }); }
-    function deleteHistory(key) { db.ref(`stocks/${currentId}/manualHistory/${key}`).remove(); }
-    function deleteStock() { if(confirm("삭제할까요?")) { db.ref(`stocks/${currentId}`).remove(); currentId = null; location.reload(); } }
+    
+    // 기록 삭제
+    function deleteHistory(key) { if(confirm("기록을 삭제할까요?")) db.ref(`stocks/${currentId}/manualHistory/${key}`).remove(); }
+    
+    // 종목 전체 삭제
+    function deleteStock() { 
+        if(confirm("이 종목의 모든 분석 데이터를 삭제하시겠습니까?")) { 
+            db.ref(`stocks/${currentId}`).remove(); 
+            currentId = null; 
+            document.getElementById('editor').style.display = 'none';
+            document.getElementById('placeholder').style.display = 'block';
+        } 
+    }
+
+    // 새 종목 추가
     function addNewItem() {
         const ref = db.ref('stocks').push();
-        ref.set({ title: "새 종목", entryPrice: 0, timestamp: Date.now() });
+        ref.set({ title: "새로운 종목", entryPrice: 0, timestamp: Date.now() });
         currentId = ref.key;
     }
 </script>
