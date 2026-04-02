@@ -11,6 +11,8 @@
             --sidebar-bg: #1a1c23;
             --main-bg: #f5f7fb;
             --accent: #10b981;
+            --target: #3b82f6; /* 목표가 색상 */
+            --entry: #f59e0b;  /* 진입가 색상 */
             --danger: #ef4444;
             --text-dark: #1f2937;
             --text-light: #9ca3af;
@@ -18,187 +20,50 @@
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body {
-            margin: 0;
-            font-family: 'Pretendard', -apple-system, sans-serif;
-            display: flex;
-            height: 100vh;
-            background-color: var(--main-bg);
-            color: var(--text-dark);
-            overflow: hidden;
-        }
+        body { margin: 0; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; background-color: var(--main-bg); color: var(--text-dark); overflow: hidden; }
 
-        /* 모바일 메뉴 버튼 */
-        .menu-toggle {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 1001;
-            background: var(--sidebar-bg);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
+        /* 사이드바 보완 */
+        #sidebar { width: 300px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; transition: var(--transition); z-index: 1000; flex-shrink: 0; }
+        .sidebar-header { padding: 25px; font-size: 1.1rem; font-weight: 800; border-bottom: 1px solid #2d3139; display: flex; justify-content: space-between; align-items: center; }
+        .add-btn { background: var(--accent); border: none; color: white; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
 
-        /* 사이드바 디자인 */
-        #sidebar {
-            width: 280px;
-            background: var(--sidebar-bg);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            transition: var(--transition);
-            z-index: 1000;
-            flex-shrink: 0;
-        }
-
-        .sidebar-header {
-            padding: 25px;
-            font-size: 1.1rem;
-            font-weight: 800;
-            border-bottom: 1px solid #2d3139;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .add-btn {
-            background: var(--accent);
-            border: none;
-            color: white;
-            padding: 8px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        #item-list { flex: 1; overflow-y: auto; padding: 10px 0; }
-
-        .list-item {
-            padding: 15px 25px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: var(--transition);
-            border-left: 4px solid transparent;
-        }
-
+        #item-list { flex: 1; overflow-y: auto; }
+        .list-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #2d3139; transition: var(--transition); position: relative; }
         .list-item:hover { background: rgba(255,255,255,0.05); }
-        .list-item.active {
-            background: rgba(16, 185, 129, 0.15);
-            border-left: 4px solid var(--accent);
-            color: var(--accent);
-        }
+        .list-item.active { background: rgba(16, 185, 129, 0.1); border-left: 4px solid var(--accent); }
+        
+        /* 사이드바 숫자 강조 */
+        .price-badge { display: block; font-size: 0.8rem; margin-top: 5px; color: var(--text-light); }
+        .entry-val { color: var(--entry); font-weight: bold; }
+        .target-val { color: var(--target); font-weight: bold; }
 
-        .del-btn {
-            color: var(--danger);
-            font-size: 0.7rem;
-            opacity: 0.5;
-            padding: 5px;
-        }
-        .list-item:hover .del-btn { opacity: 1; }
+        /* 메인 콘텐츠 영역 */
+        #main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .editor-container { max-width: 800px; margin: 0 auto; display: none; }
+        #item-title { font-size: 2.2rem; font-weight: 800; border: none; background: transparent; width: 100%; outline: none; margin-bottom: 25px; }
 
-        /* 메인 편집 영역 */
-        #main-content {
-            flex: 1;
-            padding: 40px;
-            overflow-y: auto;
-            position: relative;
-            transition: var(--transition);
-        }
-
-        .editor-container {
-            max-width: 900px;
-            margin: 0 auto;
-            display: none;
-        }
-
-        #item-title {
-            font-size: 2.2rem;
-            font-weight: 800;
-            border: none;
-            background: transparent;
-            width: 100%;
-            outline: none;
-            margin-bottom: 25px;
-            color: var(--text-dark);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .card {
-            background: var(--white);
-            padding: 22px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            border: 1px solid #eef0f3;
-        }
-
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
         .full { grid-column: span 2; }
+        label { display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-light); margin-bottom: 10px; }
 
-        label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 800;
-            color: var(--accent);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
+        /* 비주얼 입력 요소 */
+        .price-input-group { display: flex; align-items: center; gap: 10px; }
+        .price-input-group input { width: 100%; font-size: 1.5rem; font-weight: bold; border: none; border-bottom: 2px solid #eee; outline: none; padding: 5px 0; color: var(--text-dark); }
+        .price-input-group input:focus { border-bottom-color: var(--accent); }
 
-        textarea {
-            width: 100%;
-            border: none;
-            resize: none;
-            font-family: inherit;
-            font-size: 1rem;
-            outline: none;
-            min-height: 120px;
-            line-height: 1.6;
-            color: #374151;
-        }
+        .btn-group { display: flex; gap: 8px; }
+        .choice-btn { flex: 1; padding: 10px; border: 1px solid #eee; background: white; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        .choice-btn.selected { background: var(--accent); color: white; border-color: var(--accent); }
 
-        /* 모바일 대응 */
-        @media (max-width: 768px) {
-            .menu-toggle { display: block; }
-            #sidebar {
-                position: fixed;
-                left: -280px;
-                height: 100%;
-            }
-            #sidebar.open { left: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.2); }
-            #main-content { padding: 90px 20px 30px 20px; }
-            .grid { grid-template-columns: 1fr; }
-            .full { grid-column: span 1; }
-        }
+        .star-rating { font-size: 1.5rem; color: #ddd; cursor: pointer; }
+        .star-rating .active { color: #f59e0b; }
 
-        .save-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 25px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-light);
-            background: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
+        .del-btn { position: absolute; right: 10px; top: 10px; color: var(--danger); font-size: 0.7rem; opacity: 0; }
+        .list-item:hover .del-btn { opacity: 0.6; }
     </style>
 </head>
 <body>
-
-<button class="menu-toggle" onclick="toggleSidebar()">☰</button>
 
 <div id="sidebar">
     <div class="sidebar-header">
@@ -210,41 +75,56 @@
 
 <div id="main-content">
     <div id="placeholder" style="text-align: center; margin-top: 25vh; color: #cbd5e1;">
-        <h1 style="font-size: 4.5rem; margin-bottom: 10px;">📈</h1>
-        <p style="font-size: 1.1rem;">종목을 선택하거나 새 리포트를 작성하세요.</p>
+        <h1 style="font-size: 4.5rem;">📊</h1>
+        <p>분석할 종목을 선택해 주세요.</p>
     </div>
 
     <div class="editor-container" id="editor">
-        <input type="text" id="item-title" placeholder="종목명 입력" oninput="updateTitle(this.value)">
+        <input type="text" id="item-title" placeholder="종목명" oninput="updateField('title', this.value)">
         
         <div class="grid">
-            <div class="card full">
-                <label>🏢 기업 개요 및 최근 이슈</label>
-                <textarea id="field-0" oninput="autoSave()" placeholder="회사의 주요 비즈니스 모델과 최근 특징적인 뉴스를 기록하세요."></textarea>
+            <div class="card">
+                <label>⭐ 투자 매력도</label>
+                <div class="star-rating" id="star-container">
+                    <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <label>⏱ 투자 호흡</label>
+                <div class="btn-group">
+                    <button class="choice-btn" onclick="setPeriod('단기')">단기</button>
+                    <button class="choice-btn" onclick="setPeriod('중기')">중기</button>
+                    <button class="choice-btn" onclick="setPeriod('장기')">장기</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <label style="color: var(--entry);">🎯 희망 진입가</label>
+                <div class="price-input-group">
+                    <input type="number" id="entry-price" placeholder="0" oninput="updateField('entryPrice', this.value)">
+                </div>
             </div>
             <div class="card">
-                <label>✅ 투자 포인트 (Thesis)</label>
-                <textarea id="field-1" oninput="autoSave()" placeholder="매수 근거 (재료, 실적 개선, 차트 흐름 등)"></textarea>
+                <label style="color: var(--target);">🚀 1차 목표가</label>
+                <div class="price-input-group">
+                    <input type="number" id="target-price" placeholder="0" oninput="updateField('targetPrice', this.value)">
+                </div>
             </div>
-            <div class="card">
-                <label>⚠️ 리스크 관리</label>
-                <textarea id="field-2" oninput="autoSave()" placeholder="대외 변수, 산업 규제, 실적 하회 리스크 등"></textarea>
-            </div>
+
             <div class="card full">
-                <label>🎯 가격 전략 및 비중</label>
-                <textarea id="field-3" oninput="autoSave()" placeholder="1차 목표가, 손절가, 자금 투입 비중 계획"></textarea>
+                <label>📝 핵심 한줄 메모</label>
+                <textarea id="field-memo" style="width:100%; border:none; outline:none; resize:none; font-size:1rem;" rows="3" oninput="updateField('memo', this.value)" placeholder="글보다는 핵심만 간단히..."></textarea>
             </div>
         </div>
     </div>
-    <div class="save-indicator" id="save-status">Cloud Ready</div>
 </div>
 
 <script>
-    // 1. Firebase 설정
+    // Firebase 설정 (기존 설정 유지)
     const firebaseConfig = {
         apiKey: "AIzaSyDIgzZzkJCNl_N2CTJpQzXYrxmymBqlq4A",
         authDomain: "stock-81b2d.firebaseapp.com",
-        // 데이터베이스 URL이 누락되면 연결이 안 될 수 있습니다.
         databaseURL: "https://stock-81b2d-default-rtdb.asia-southeast1.firebasedatabase.app/", 
         projectId: "stock-81b2d",
         storageBucket: "stock-81b2d.firebasestorage.app",
@@ -254,34 +134,34 @@
     
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     let items = [];
     let currentId = null;
 
-    // 2. 실시간 데이터 리스너
     db.ref('stocks').on('value', (snapshot) => {
         const data = snapshot.val();
-        // 타임스탬프 기준 역순 정렬 (최신이 위로)
         items = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a,b) => b.timestamp - a.timestamp) : [];
         renderList();
-        if(currentId) syncEditorContent();
-    }, (error) => {
-        console.error("Firebase 연결 에러:", error);
-        alert("데이터를 가져오는데 실패했습니다. Firebase 보안 규칙을 확인하세요.");
+        if(currentId) syncEditor();
     });
 
     function renderList() {
-        const listContainer = document.getElementById('item-list');
-        listContainer.innerHTML = '';
+        const container = document.getElementById('item-list');
+        container.innerHTML = '';
         items.forEach(item => {
             const div = document.createElement('div');
             div.className = `list-item ${item.id === currentId ? 'active' : ''}`;
             div.onclick = () => selectItem(item.id);
+            
+            // 사이드바에 진입가/목표가 숫자 반영
+            const entry = item.entryPrice ? Number(item.entryPrice).toLocaleString() : '-';
+            const target = item.targetPrice ? Number(item.targetPrice).toLocaleString() : '-';
+            
             div.innerHTML = `
-                <span>${item.title || "제목 없음"}</span>
+                <strong>${item.title || "종목명 없음"}</strong>
+                <span class="price-badge"><span class="entry-val">${entry}</span> → <span class="target-val">${target}</span></span>
                 <span class="del-btn" onclick="deleteItem(event, '${item.id}')">삭제</span>
             `;
-            listContainer.appendChild(div);
+            container.appendChild(div);
         });
     }
 
@@ -289,73 +169,46 @@
         currentId = id;
         document.getElementById('placeholder').style.display = 'none';
         document.getElementById('editor').style.display = 'block';
-        syncEditorContent();
+        syncEditor();
         renderList();
-        if(window.innerWidth <= 768) toggleSidebar(); 
     }
 
-    // 서버 데이터를 에디터에 반영
-    function syncEditorContent() {
+    function syncEditor() {
         const item = items.find(i => i.id === currentId);
         if(!item) return;
+
+        if(document.activeElement.id !== 'item-title') document.getElementById('item-title').value = item.title || "";
+        if(document.activeElement.id !== 'entry-price') document.getElementById('entry-price').value = item.entryPrice || "";
+        if(document.activeElement.id !== 'target-price') document.getElementById('target-price').value = item.targetPrice || "";
+        if(document.activeElement.id !== 'field-memo') document.getElementById('field-memo').value = item.memo || "";
         
-        // 현재 포커스된 요소가 없을 때만 값 업데이트 (타이핑 중 끊김 방지)
-        if(document.activeElement.id !== 'item-title') {
-            document.getElementById('item-title').value = item.title || "";
-        }
-        
-        const content = item.content || ["", "", "", ""];
-        for(let i=0; i<4; i++) {
-            if(document.activeElement.id !== `field-${i}`) {
-                document.getElementById(`field-${i}`).value = content[i] || "";
-            }
-        }
+        // 별점 업데이트
+        const stars = document.getElementById('star-container').children;
+        for(let i=0; i<5; i++) stars[i].className = i < (item.rating || 0) ? 'active' : '';
+
+        // 기간 버튼 업데이트
+        document.querySelectorAll('.choice-btn').forEach(btn => {
+            btn.className = btn.innerText === item.period ? 'choice-btn selected' : 'choice-btn';
+        });
     }
+
+    function updateField(field, val) {
+        if(!currentId) return;
+        db.ref('stocks/' + currentId).update({ [field]: val, timestamp: Date.now() });
+    }
+
+    function setRating(val) { updateField('rating', val); }
+    function setPeriod(val) { updateField('period', val); }
 
     function addNewItem() {
         const newRef = db.ref('stocks').push();
-        newRef.set({
-            title: "새 분석 종목",
-            content: ["", "", "", ""],
-            timestamp: Date.now()
-        });
+        newRef.set({ title: "새 종목", entryPrice: "", targetPrice: "", rating: 3, period: "중기", timestamp: Date.now() });
         currentId = newRef.key;
-    }
-
-    function updateTitle(val) {
-        if(!currentId) return;
-        db.ref('stocks/' + currentId).update({ title: val });
-    }
-
-    let saveTimer;
-    function autoSave() {
-        document.getElementById('save-status').innerText = "저장 중...";
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(() => {
-            const content = [];
-            for(let i=0; i<4; i++) content.push(document.getElementById(`field-${i}`).value);
-            db.ref('stocks/' + currentId).update({ 
-                content: content,
-                lastUpdated: Date.now()
-            });
-            document.getElementById('save-status').innerText = "Cloud Synced";
-        }, 800);
     }
 
     function deleteItem(e, id) {
         e.stopPropagation();
-        if(confirm("이 분석 리포트를 삭제할까요?")) {
-            db.ref('stocks/' + id).remove();
-            if(currentId === id) {
-                currentId = null;
-                document.getElementById('editor').style.display = 'none';
-                document.getElementById('placeholder').style.display = 'block';
-            }
-        }
-    }
-
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
+        if(confirm("삭제하시겠습니까?")) db.ref('stocks/' + id).remove();
     }
 </script>
 </body>
