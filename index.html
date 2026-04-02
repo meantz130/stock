@@ -37,13 +37,22 @@
             #sidebar.open + .mobile-overlay { display: block; }
         }
 
+        /* 총 자산 표시 영역 */
+        .total-asset-box {
+            padding: 15px 20px;
+            background: #252830;
+            border-bottom: 1px solid #374151;
+            text-align: right;
+        }
+        .total-asset-box span { color: var(--text-light); font-size: 0.8rem; }
+        .total-asset-box div { color: var(--accent); font-weight: 900; font-size: 1.1rem; margin-top: 4px; }
+
         .list-item { 
             padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #2d3139; 
             transition: var(--transition); border-left: 4px solid transparent;
         }
         .list-item:hover { background: #252830; }
         
-        /* 사용자가 직접 클릭한 항목에만 적용되는 스타일 */
         .list-item.selected-active { 
             background: var(--active-item) !important; 
             border-left: 4px solid var(--accent) !important;
@@ -80,7 +89,11 @@
         <span>STOCK HUB</span>
         <button onclick="addNewItem()" style="background:var(--accent); color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">+ 추가</button>
     </div>
-    <div id="item-list"></div>
+    <div class="total-asset-box">
+        <span>총 보유 자산 합계</span>
+        <div id="total-asset-value">0원</div>
+    </div>
+    <div id="item-list" style="overflow-y: auto;"></div>
 </div>
 <div class="mobile-overlay" onclick="toggleMenu()"></div>
 
@@ -112,6 +125,9 @@
                     <label style="font-size:0.75rem; color:var(--text-light);">평균 단가</label>
                     <input type="number" id="hold-avg" placeholder="0원" oninput="updateField('holdAvg', this.value)">
                 </div>
+            </div>
+            <div style="margin-top: 15px; text-align: right; font-size: 0.9rem; color: var(--text-dark);">
+                보유 자산 평가액: <strong id="item-asset-sum" style="color:var(--accent);">0</strong>원
             </div>
         </div>
 
@@ -154,7 +170,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let items = [], currentId = null;
-    let lastClickedId = null; // 사용자가 마지막으로 클릭한 ID를 추적
+    let lastClickedId = null;
 
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
 
@@ -171,22 +187,35 @@
     db.ref('stocks').on('value', (snap) => {
         const data = snap.val();
         items = data ? Object.keys(data).map(k => ({id:k, ...data[k]})).sort((a,b)=>b.timestamp-a.timestamp) : [];
+        
+        // 전체 자산 합계 계산
+        calculateTotalAssets();
         renderList();
         if(currentId) syncEditor();
     });
+
+    // 모든 종목의 자산을 합산하여 사이드바에 표시
+    function calculateTotalAssets() {
+        let total = 0;
+        items.forEach(item => {
+            const count = Number(item.holdCount) || 0;
+            const avg = Number(item.holdAvg) || 0;
+            total += (count * avg);
+        });
+        document.getElementById('total-asset-value').innerText = total.toLocaleString() + "원";
+    }
 
     function renderList() {
         const container = document.getElementById('item-list');
         container.innerHTML = '';
         items.forEach(item => {
             const div = document.createElement('div');
-            // 'active' 클래스 대신 'selected-active'를 사용하여 명시적 클릭 상태 확인
             const isSelected = (lastClickedId !== null && String(item.id) === String(lastClickedId));
             div.className = `list-item ${isSelected ? 'selected-active' : ''}`;
             
             div.onclick = () => { 
                 currentId = item.id; 
-                lastClickedId = item.id; // 클릭 시에만 상태 업데이트
+                lastClickedId = item.id;
                 selectItem(); 
                 if(window.innerWidth <= 768) toggleMenu(); 
             };
@@ -205,7 +234,6 @@
         const item = items.find(i => i.id === currentId);
         if(!item) return;
         
-        // 입력 필드 동기화 (포커스된 요소 제외)
         const fields = {
             'item-title': item.title,
             'entry-price': item.entryPrice,
@@ -221,6 +249,10 @@
             const el = document.getElementById(id);
             if(document.activeElement !== el) el.value = value || "";
         }
+
+        // 개별 종목 평가액 표시
+        const itemSum = (Number(item.holdCount) || 0) * (Number(item.holdAvg) || 0);
+        document.getElementById('item-asset-sum').innerText = itemSum.toLocaleString();
 
         const hList = document.getElementById('history-list');
         hList.innerHTML = '';
@@ -257,7 +289,7 @@
         const ref = db.ref('stocks').push();
         ref.set({ title: "새로운 종목", entryPrice: 0, timestamp: Date.now() });
         currentId = ref.key;
-        lastClickedId = ref.key; // 추가 시 자동으로 선택 상태로
+        lastClickedId = ref.key;
     }
 </script>
 </body>
