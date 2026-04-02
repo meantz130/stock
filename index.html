@@ -23,11 +23,12 @@
 
         body { margin: 0; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; background-color: var(--main-bg); overflow: hidden; }
 
-        /* 사이드바 스타일 */
+        /* 사이드바 레이아웃 수정 */
         #sidebar { 
             width: 280px; background: var(--sidebar-bg); color: white; 
             display: flex; flex-direction: column; flex-shrink: 0;
             transition: transform 0.3s ease; z-index: 2000;
+            height: 100vh; /* 높이 고정 */
         }
         
         @media (max-width: 768px) {
@@ -47,6 +48,17 @@
         .total-asset-box span { color: var(--text-light); font-size: 0.8rem; }
         .total-asset-box div { color: var(--accent); font-weight: 900; font-size: 1.1rem; margin-top: 4px; }
 
+        /* 리스트 영역: 스크롤 가능하게 설정 */
+        #item-list { 
+            flex: 1; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; /* iOS 터치 밀기 최적화 */
+        }
+        
+        /* 스크롤바 디자인 (선택 사항) */
+        #item-list::-webkit-scrollbar { width: 5px; }
+        #item-list::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+
         .list-item { 
             padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #2d3139; 
             transition: var(--transition); border-left: 4px solid transparent;
@@ -58,6 +70,27 @@
             border-left: 4px solid var(--accent) !important;
             font-weight: bold;
         }
+
+        /* 사이드바 하단 버튼 영역 */
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid #2d3139;
+            background: var(--sidebar-bg);
+        }
+        .link-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #374151;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .link-btn:hover { background: #4b5563; }
 
         /* 메인 영역 */
         #main-content { flex: 1; padding: 15px; overflow-y: auto; width: 100%; }
@@ -93,7 +126,12 @@
         <span>총 보유 자산 합계</span>
         <div id="total-asset-value">0원</div>
     </div>
-    <div id="item-list" style="overflow-y: auto;"></div>
+    
+    <div id="item-list"></div>
+
+    <div class="sidebar-footer">
+        <a href="https://ko.tradingeconomics.com/" target="_blank" class="link-btn">📊 지표 확인</a>
+    </div>
 </div>
 <div class="mobile-overlay" onclick="toggleMenu()"></div>
 
@@ -186,15 +224,14 @@
 
     db.ref('stocks').on('value', (snap) => {
         const data = snap.val();
-        items = data ? Object.keys(data).map(k => ({id:k, ...data[k]})).sort((a,b)=>b.timestamp-a.timestamp) : [];
+        // 정렬을 하지 않거나(Object.keys 순서), ID 생성 순서로 유지하여 순서 튐 방지
+        items = data ? Object.keys(data).map(k => ({id:k, ...data[k]})) : [];
         
-        // 전체 자산 합계 계산
         calculateTotalAssets();
         renderList();
         if(currentId) syncEditor();
     });
 
-    // 모든 종목의 자산을 합산하여 사이드바에 표시
     function calculateTotalAssets() {
         let total = 0;
         items.forEach(item => {
@@ -250,7 +287,6 @@
             if(document.activeElement !== el) el.value = value || "";
         }
 
-        // 개별 종목 평가액 표시
         const itemSum = (Number(item.holdCount) || 0) * (Number(item.holdAvg) || 0);
         document.getElementById('item-asset-sum').innerText = itemSum.toLocaleString();
 
@@ -266,9 +302,10 @@
         }
     }
 
+    // 필드 업데이트 시 timestamp를 갱신하지 않거나, 정렬을 고정하여 순서 유지
     function updateField(f, v) { 
         if(!currentId) return;
-        db.ref(`stocks/${currentId}`).update({ [f]: v, timestamp: Date.now() }); 
+        db.ref(`stocks/${currentId}`).update({ [f]: v }); // timestamp 업데이트 제거하여 순서 유지
     }
     
     function deleteHistory(key) { 
@@ -287,7 +324,7 @@
 
     function addNewItem() {
         const ref = db.ref('stocks').push();
-        ref.set({ title: "새로운 종목", entryPrice: 0, timestamp: Date.now() });
+        ref.set({ title: "새로운 종목", entryPrice: 0 }); // 초기 생성 시에도 고정 순서 유지
         currentId = ref.key;
         lastClickedId = ref.key;
     }
