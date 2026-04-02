@@ -47,7 +47,12 @@
         @media (max-width: 768px) { .menu-toggle { display: block; } }
 
         .editor-container { max-width: 900px; margin: 0 auto; display: none; }
-        #item-title { font-size: 1.8rem; font-weight: 800; border: none; background: transparent; width: 100%; outline: none; margin-bottom: 20px; }
+        
+        /* 헤더 영역: 제목과 삭제 버튼 */
+        .editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 20px; }
+        #item-title { font-size: 1.8rem; font-weight: 800; border: none; background: transparent; width: 100%; outline: none; }
+        .delete-stock-btn { background: #fee2e2; color: var(--danger); border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap; transition: 0.2s; }
+        .delete-stock-btn:hover { background: var(--danger); color: white; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
         .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
@@ -65,7 +70,7 @@
         .star-rating { font-size: 1.8rem; color: #ddd; cursor: pointer; }
         .star-rating span.active { color: #f59e0b; }
 
-        /* 종가 히스토리 태그 (삭제 버튼 포함) */
+        /* 히스토리 태그 (삭제 버튼 포함) */
         .history-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .history-item { 
             background: #edf2f7; padding: 5px 12px; border-radius: 20px; 
@@ -98,7 +103,10 @@
     </div>
 
     <div class="editor-container" id="editor">
-        <input type="text" id="item-title" placeholder="종목명" oninput="updateField('title', this.value)">
+        <div class="editor-header">
+            <input type="text" id="item-title" placeholder="종목명" oninput="updateField('title', this.value)">
+            <button class="delete-stock-btn" onclick="deleteCurrentStock()">종목 삭제</button>
+        </div>
         
         <div class="grid">
             <div class="card">
@@ -159,7 +167,7 @@
 </div>
 
 <script>
-    // Firebase 설정 (기존 설정 유지)
+    // Firebase 설정
     const firebaseConfig = {
         apiKey: "AIzaSyDIgzZzkJCNl_N2CTJpQzXYrxmymBqlq4A",
         authDomain: "stock-81b2d.firebaseapp.com",
@@ -213,7 +221,12 @@
 
     function syncEditor() {
         const item = items.find(i => i.id === currentId);
-        if(!item) return;
+        if(!item) {
+            currentId = null;
+            document.getElementById('editor').style.display = 'none';
+            document.getElementById('placeholder').style.display = 'block';
+            return;
+        }
 
         const fields = { 'item-title': 'title', 'entry-price': 'entryPrice', 'target-1': 'target1', 'target-2': 'target2', 'target-3': 'target3', 'field-memo': 'memo' };
         for (let [id, key] of Object.entries(fields)) {
@@ -227,7 +240,6 @@
             btn.className = btn.innerText === item.period ? 'choice-btn selected' : 'choice-btn';
         });
 
-        // 히스토리 렌더링 (삭제 버튼 포함)
         const historyContainer = document.getElementById('close-history');
         historyContainer.innerHTML = '';
         if(item.history) {
@@ -267,10 +279,18 @@
         }
     }
 
-    // 종가 히스토리 단일 삭제 함수
     function deleteHistory(historyKey) {
         if(confirm("이 기록을 삭제할까요?")) {
             db.ref(`stocks/${currentId}/history/${historyKey}`).remove();
+        }
+    }
+
+    // 전체 종목 삭제 함수
+    function deleteCurrentStock() {
+        if(!currentId) return;
+        const item = items.find(i => i.id === currentId);
+        if(confirm(`[${item.title || '새 종목'}] 분석 데이터를 완전히 삭제할까요?`)) {
+            db.ref('stocks/' + currentId).remove();
         }
     }
 
