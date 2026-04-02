@@ -31,7 +31,7 @@
             display: flex; justify-content: center; align-items: center;
         }
         .login-card { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; }
-        .login-card input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .login-card input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
         .login-card button { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
 
         #sidebar { 
@@ -48,7 +48,6 @@
             #sidebar.open + .mobile-overlay { display: block; }
         }
 
-        /* 환영 문구 스타일 */
         .user-welcome { padding: 15px 20px 5px 20px; font-size: 0.8rem; color: var(--accent); font-weight: 600; }
 
         .total-asset-box {
@@ -117,7 +116,7 @@
         <input type="email" id="login-email" placeholder="아이디 (이메일)">
         <input type="password" id="login-pw" placeholder="비밀번호">
         <button onclick="handleLogin()">로그인</button>
-        <p id="login-error" style="color:var(--danger); font-size:0.8rem; margin-top:10px; display:none;">아이디 또는 비밀번호가 틀렸거나 권한이 없습니다.</p>
+        <p id="login-error" style="color:var(--danger); font-size:0.8rem; margin-top:10px; display:none;">아이디 또는 비밀번호를 확인해주세요.</p>
     </div>
 </div>
 
@@ -200,7 +199,6 @@
 </div>
 
 <script>
-    // Firebase 설정
     const firebaseConfig = {
         apiKey: "AIzaSyDIgzZzkJCNl_N2CTJpQzXYrxmymBqlq4A",
         authDomain: "stock-81b2d.firebaseapp.com",
@@ -211,9 +209,6 @@
     const db = firebase.database();
     const auth = firebase.auth();
 
-    // ★ 관리자(사용자) 아이디 설정 (로그인 가능 이메일)
-    const ALLOWED_ID = "admin@stockhub.com"; 
-
     let items = [], currentId = null, lastClickedId = null;
     let historyPage = 1; const historyLimit = 10;
 
@@ -223,13 +218,8 @@
         const pw = document.getElementById('login-pw').value;
         const errEl = document.getElementById('login-error');
 
+        // Firebase에 등록된 사용자면 누구나 로그인 가능
         auth.signInWithEmailAndPassword(email, pw)
-            .then((userCredential) => {
-                if(userCredential.user.email !== ALLOWED_ID) {
-                    alert("비허가 사용자입니다.");
-                    auth.signOut();
-                }
-            })
             .catch((error) => {
                 errEl.style.display = 'block';
             });
@@ -243,9 +233,9 @@
 
     // 인증 상태 감시
     auth.onAuthStateChanged((user) => {
-        if (user && user.email === ALLOWED_ID) {
+        if (user) {
             document.getElementById('login-overlay').style.display = 'none';
-            // 사용자 이름 표시 (이메일 앞부분 또는 별칭)
+            // 사용자 이름 표시 (이메일의 앞부분 추출)
             const userName = user.email.split('@')[0];
             document.getElementById('user-display-name').innerText = `환영합니다. ${userName} 사용자님.`;
             initApp();
