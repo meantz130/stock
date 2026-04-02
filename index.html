@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Intelligence Pro</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --sidebar-bg: #1a1c23;
+            --main-bg: #f5f7fb;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --text-dark: #1f2937;
+            --text-light: #9ca3af;
+            --white: #ffffff;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            display: flex;
+            height: 100vh;
+            background-color: var(--main-bg);
+            color: var(--text-dark);
+            overflow: hidden;
+        }
+
+        /* 모바일 햄버거 버튼 */
+        .menu-toggle {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            background: var(--sidebar-bg);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: none; /* 기본 데스크탑에선 숨김 */
+        }
+
+        /* 사이드바 */
+        #sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            z-index: 1000;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 25px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            border-bottom: 1px solid #2d3139;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .add-btn {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        #item-list { flex: 1; overflow-y: auto; padding: 10px 0; }
+
+        .list-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+        }
+
+        .list-item:hover { background: rgba(255,255,255,0.05); }
+        .list-item.active {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--accent);
+            color: var(--accent);
+        }
+
+        /* 메인 컨텐츠 */
+        #main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .editor-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: none; /* 선택 전 숨김 */
+        }
+
+        #item-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            border: none;
+            background: transparent;
+            width: 100%;
+            outline: none;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+        }
+
+        .full { grid-column: span 2; }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        textarea {
+            width: 100%;
+            border: none;
+            resize: none;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            min-height: 100px;
+        }
+
+        /* 모바일 대응 */
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; }
+            #sidebar {
+                position: fixed;
+                left: -280px;
+                height: 100%;
+            }
+            #sidebar.open { left: 0; }
+            #main-content { padding: 80px 20px 20px 20px; }
+            .grid { grid-template-columns: 1fr; }
+            .full { grid-column: span 1; }
+        }
+
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+
+<button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
+<div id="sidebar">
+    <div class="sidebar-header">
+        <span>STOCK HUB</span>
+        <button class="add-btn" onclick="addNewItem()">+ NEW</button>
+    </div>
+    <div id="item-list"></div>
+</div>
+
+<div id="main-content">
+    <div id="placeholder" style="text-align: center; margin-top: 20vh; color: #cbd5e1;">
+        <h1 style="font-size: 4rem;">📈</h1>
+        <p>분석할 종목을 선택하거나 새로 추가하세요.</p>
+    </div>
+
+    <div class="editor-container" id="editor">
+        <input type="text" id="item-title" placeholder="종목명 입력" oninput="updateTitle(this.value)">
+        
+        <div class="grid">
+            <div class="card full">
+                <label>🏢 기업 개요</label>
+                <textarea id="field-0" oninput="autoSave()" placeholder="회사의 주요 사업 및 최근 뉴스를 정리하세요."></textarea>
+            </div>
+            <div class="card">
+                <label>✅ 투자 포인트</label>
+                <textarea id="field-1" oninput="autoSave()" placeholder="매수해야 하는 결정적인 이유"></textarea>
+            </div>
+            <div class="card">
+                <label>⚠️ 리스크 체크</label>
+                <textarea id="field-2" oninput="autoSave()" placeholder="하락 시나리오 및 우려 사항"></textarea>
+            </div>
+            <div class="card full">
+                <label>🎯 가격 및 비중 전략</label>
+                <textarea id="field-3" oninput="autoSave()" placeholder="목표가, 손절가, 자금 배분 계획"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="save-indicator" id="save-status">Cloud Synced</div>
+</div>
+
+<script>
+    // 1. Firebase 설정 (본인의 정보를 입력하세요)
+    const firebaseConfig = {
+        apiKey: "AIzaSyDIgzZzkJCNl_N2CTJpQzXYrxmymBqlq4A",
+        authDomain: "stock-81b2d.firebaseapp.com",
+        projectId: "stock-81b2d",
+	storageBucket: "stock-81b2d.firebasestorage.app",
+	messagingSenderId: "180064792232",
+	appId: "1:180064792232:web:3a06a244e5a54ad44b5c9d",
+	measurementId: "G-788BG78YQL"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let items = [];
+    let currentId = null;
+
+    // 데이터 불러오기 (최초 실행)
+    db.ref('stocks').on('value', (snapshot) => {
+        const data = snapshot.val();
+        items = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+        renderList();
+        if(currentId) updateEditorUI();
+    });
+
+    function renderList() {
+        const listContainer = document.getElementById('item-list');
+        listContainer.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = `list-item ${item.id === currentId ? 'active' : ''}`;
+            div.onclick = () => selectItem(item.id);
+            div.innerHTML = `<span>${item.title}</span><span onclick="deleteItem(event, '${item.id}')" style="color:#ef4444; font-size:12px;">삭제</span>`;
+            listContainer.appendChild(div);
+        });
+    }
+
+    function selectItem(id) {
+        currentId = id;
+        document.getElementById('placeholder').style.display = 'none';
+        document.getElementById('editor').style.display = 'block';
+        updateEditorUI();
+        renderList();
+        if(window.innerWidth <= 768) toggleSidebar(); // 모바일 클릭시 닫기
+    }
+
+    function updateEditorUI() {
+        const item = items.find(i => i.id === currentId);
+        if(!item) return;
+        document.getElementById('item-title').value = item.title;
+        for(let i=0; i<4; i++) {
+            document.getElementById(`field-${i}`).value = item.content ? item.content[i] : "";
+        }
+    }
+
+    function addNewItem() {
+        const newRef = db.ref('stocks').push();
+        newRef.set({
+            title: "새 종목 분석",
+            content: ["", "", "", ""],
+            timestamp: Date.now()
+        });
+        currentId = newRef.key;
+    }
+
+    function updateTitle(val) {
+        if(!currentId) return;
+        db.ref('stocks/' + currentId).update({ title: val });
+    }
+
+    let saveTimer;
+    function autoSave() {
+        document.getElementById('save-status').innerText = "저장 중...";
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+            const content = [];
+            for(let i=0; i<4; i++) content.push(document.getElementById(`field-${i}`).value);
+            db.ref('stocks/' + currentId).update({ content: content });
+            document.getElementById('save-status').innerText = "Cloud Synced";
+        }, 1000);
+    }
+
+    function deleteItem(e, id) {
+        e.stopPropagation();
+        if(confirm("삭제하시겠습니까?")) {
+            db.ref('stocks/' + id).remove();
+            if(currentId === id) {
+                currentId = null;
+                location.reload();
+            }
+        }
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+</script>
+</body>
+</html>
