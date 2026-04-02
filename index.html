@@ -23,7 +23,7 @@
 
         body { margin: 0; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; background-color: var(--main-bg); overflow: hidden; }
 
-        /* 사이드바 및 선택 하이라이트 */
+        /* 사이드바 스타일 */
         #sidebar { 
             width: 280px; background: var(--sidebar-bg); color: white; 
             display: flex; flex-direction: column; flex-shrink: 0;
@@ -43,8 +43,8 @@
         }
         .list-item:hover { background: #252830; }
         
-        /* 하이라이트 상태 강제 유지 */
-        .list-item.active { 
+        /* 사용자가 직접 클릭한 항목에만 적용되는 스타일 */
+        .list-item.selected-active { 
             background: var(--active-item) !important; 
             border-left: 4px solid var(--accent) !important;
             font-weight: bold;
@@ -102,6 +102,20 @@
         </div>
 
         <div class="card">
+            <label style="font-size:0.8rem; font-weight:bold; color:var(--text-dark);">💼 현재 보유 정보</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:10px;">
+                <div class="price-box">
+                    <label style="font-size:0.75rem; color:var(--text-light);">보유 수량</label>
+                    <input type="number" id="hold-count" placeholder="0주" oninput="updateField('holdCount', this.value)">
+                </div>
+                <div class="price-box">
+                    <label style="font-size:0.75rem; color:var(--text-light);">평균 단가</label>
+                    <input type="number" id="hold-avg" placeholder="0원" oninput="updateField('holdAvg', this.value)">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
             <div class="price-box">
                 <label style="font-size:0.8rem; color:var(--entry); font-weight:bold;">🎯 희망 진입가</label>
                 <input type="number" id="entry-price" placeholder="목표 매수가 입력" oninput="updateField('entryPrice', this.value)">
@@ -140,24 +154,17 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let items = [], currentId = null;
+    let lastClickedId = null; // 사용자가 마지막으로 클릭한 ID를 추적
 
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
 
-    // 저장 시 하이라이트 유지를 위해 currentId를 명확히 고정
     function handleManualSave(e) {
         if(e.key === 'Enter' && e.target.value && currentId) {
             const val = e.target.value;
             const now = new Date();
             const dateStr = `${now.getFullYear().toString().slice(-2)}.${now.getMonth()+1}.${now.getDate()}`;
-            
-            // 입력창 비우기 및 포커스 유지
             e.target.value = '';
-            
-            // 데이터베이스 업데이트
-            db.ref(`stocks/${currentId}/manualHistory`).push({ 
-                date: dateStr, 
-                price: val 
-            });
+            db.ref(`stocks/${currentId}/manualHistory`).push({ date: dateStr, price: val });
         }
     }
 
@@ -173,12 +180,13 @@
         container.innerHTML = '';
         items.forEach(item => {
             const div = document.createElement('div');
-            // ID 비교를 통한 active 클래스 부여 (절대 경로 보장)
-            const isActive = (currentId !== null && String(item.id) === String(currentId));
-            div.className = `list-item ${isActive ? 'active' : ''}`;
+            // 'active' 클래스 대신 'selected-active'를 사용하여 명시적 클릭 상태 확인
+            const isSelected = (lastClickedId !== null && String(item.id) === String(lastClickedId));
+            div.className = `list-item ${isSelected ? 'selected-active' : ''}`;
             
             div.onclick = () => { 
                 currentId = item.id; 
+                lastClickedId = item.id; // 클릭 시에만 상태 업데이트
                 selectItem(); 
                 if(window.innerWidth <= 768) toggleMenu(); 
             };
@@ -197,12 +205,22 @@
         const item = items.find(i => i.id === currentId);
         if(!item) return;
         
-        if(document.activeElement.id !== 'item-title') document.getElementById('item-title').value = item.title || "";
-        if(document.activeElement.id !== 'entry-price') document.getElementById('entry-price').value = item.entryPrice || "";
-        if(document.activeElement.id !== 'field-memo') document.getElementById('field-memo').value = item.memo || "";
-        if(document.activeElement.id !== 't1') document.getElementById('t1').value = item.t1 || "";
-        if(document.activeElement.id !== 't2') document.getElementById('t2').value = item.t2 || "";
-        if(document.activeElement.id !== 't3') document.getElementById('t3').value = item.t3 || "";
+        // 입력 필드 동기화 (포커스된 요소 제외)
+        const fields = {
+            'item-title': item.title,
+            'entry-price': item.entryPrice,
+            'field-memo': item.memo,
+            't1': item.t1,
+            't2': item.t2,
+            't3': item.t3,
+            'hold-count': item.holdCount,
+            'hold-avg': item.holdAvg
+        };
+
+        for (const [id, value] of Object.entries(fields)) {
+            const el = document.getElementById(id);
+            if(document.activeElement !== el) el.value = value || "";
+        }
 
         const hList = document.getElementById('history-list');
         hList.innerHTML = '';
@@ -228,7 +246,8 @@
     function deleteStock() { 
         if(confirm("이 종목 분석 데이터를 삭제하시겠습니까?")) { 
             db.ref(`stocks/${currentId}`).remove(); 
-            currentId = null; 
+            currentId = null;
+            lastClickedId = null;
             document.getElementById('editor').style.display = 'none';
             document.getElementById('placeholder').style.display = 'block';
         } 
@@ -238,6 +257,7 @@
         const ref = db.ref('stocks').push();
         ref.set({ title: "새로운 종목", entryPrice: 0, timestamp: Date.now() });
         currentId = ref.key;
+        lastClickedId = ref.key; // 추가 시 자동으로 선택 상태로
     }
 </script>
 </body>
