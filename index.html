@@ -22,7 +22,7 @@
 
         body { margin: 0; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; background-color: var(--main-bg); overflow: hidden; }
 
-        /* 사이드바 및 모바일 대응 */
+        /* 사이드바 스타일 */
         #sidebar { 
             width: 300px; background: var(--sidebar-bg); color: white; 
             display: flex; flex-direction: column; transition: var(--transition); 
@@ -54,7 +54,7 @@
         .full { grid-column: 1 / -1; }
         label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-light); margin-bottom: 12px; text-transform: uppercase; }
 
-        /* 입력 인터페이스 */
+        /* 입력 도구 */
         .price-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
         .price-input-group input { width: 100%; font-size: 1.2rem; font-weight: bold; border: none; border-bottom: 2px solid #eee; outline: none; padding: 5px 0; }
         .price-input-group input:focus { border-bottom-color: var(--accent); }
@@ -65,9 +65,17 @@
         .star-rating { font-size: 1.8rem; color: #ddd; cursor: pointer; }
         .star-rating span.active { color: #f59e0b; }
 
-        /* 히스토리 태그 */
+        /* 종가 히스토리 태그 (삭제 버튼 포함) */
         .history-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .history-item { background: #edf2f7; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; color: #4a5568; }
+        .history-item { 
+            background: #edf2f7; padding: 5px 12px; border-radius: 20px; 
+            font-size: 0.85rem; color: #4a5568; display: flex; align-items: center; gap: 6px;
+        }
+        .del-history { 
+            cursor: pointer; color: var(--danger); font-weight: bold; 
+            font-size: 1rem; line-height: 1; display: inline-block; 
+        }
+        .del-history:hover { transform: scale(1.2); }
     </style>
 </head>
 <body>
@@ -75,7 +83,7 @@
 <div id="sidebar">
     <div class="sidebar-header">
         <span>STOCK HUB</span>
-        <button class="add-btn" onclick="addNewItem()" style="background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">+ 추가</button>
+        <button onclick="addNewItem()" style="background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">+ 추가</button>
     </div>
     <div id="item-list"></div>
 </div>
@@ -94,31 +102,31 @@
         
         <div class="grid">
             <div class="card">
-                <label>⭐ 투자 매력도 (다시 눌러 취소)</label>
+                <label>⭐ 투자 매력도 (토글)</label>
                 <div class="star-rating" id="star-container">
                     <span onclick="toggleRating(1)">★</span><span onclick="toggleRating(2)">★</span><span onclick="toggleRating(3)">★</span><span onclick="toggleRating(4)">★</span><span onclick="toggleRating(5)">★</span>
                 </div>
             </div>
 
             <div class="card">
-                <label>⏱ 투자 호흡</label>
+                <label>⏱ 투자 호흡 (토글)</label>
                 <div class="btn-group" style="display:flex; gap:5px;">
                     <button class="choice-btn" onclick="togglePeriod('단기')">단기</button>
-                    <button class="choice-btn" onclick="setPeriod('중기')">중기</button>
+                    <button class="choice-btn" onclick="togglePeriod('중기')">중기</button>
                     <button class="choice-btn" onclick="togglePeriod('장기')">장기</button>
                 </div>
             </div>
 
             <div class="card full">
                 <label style="color: var(--entry);">💰 진입가 및 종가 기록</label>
-                <div style="display: flex; gap: 15px; align-items: flex-end;">
+                <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 10px;">
                     <div class="price-input-group" style="flex: 1;">
                         <span style="font-size: 0.7rem; color: var(--text-light);">희망 진입가</span>
                         <input type="number" id="entry-price" placeholder="0" oninput="updateField('entryPrice', this.value)">
                     </div>
                     <div class="price-input-group" style="flex: 1;">
-                        <span style="font-size: 0.7rem; color: var(--text-light);">오늘의 종가 입력</span>
-                        <input type="number" id="close-price-input" placeholder="숫자 입력 후 Enter" onkeydown="handleClosePrice(event)">
+                        <span style="font-size: 0.7rem; color: var(--text-light);">오늘의 종가 기록 (Enter)</span>
+                        <input type="number" id="close-price-input" placeholder="가격 입력" onkeydown="handleClosePrice(event)">
                     </div>
                 </div>
                 <div class="history-list" id="close-history"></div>
@@ -128,15 +136,15 @@
                 <label style="color: var(--target);">🚀 목표가 시스템 (Target 1-2-3)</label>
                 <div class="price-row">
                     <div class="price-input-group">
-                        <span style="font-size: 0.7rem;">1차 목표</span>
+                        <span style="font-size: 0.7rem;">1차</span>
                         <input type="number" id="target-1" placeholder="0" oninput="updateField('target1', this.value)">
                     </div>
                     <div class="price-input-group">
-                        <span style="font-size: 0.7rem;">2차 목표</span>
+                        <span style="font-size: 0.7rem;">2차</span>
                         <input type="number" id="target-2" placeholder="0" oninput="updateField('target2', this.value)">
                     </div>
                     <div class="price-input-group">
-                        <span style="font-size: 0.7rem;">3차 목표</span>
+                        <span style="font-size: 0.7rem;">3차</span>
                         <input type="number" id="target-3" placeholder="0" oninput="updateField('target3', this.value)">
                     </div>
                 </div>
@@ -144,14 +152,14 @@
 
             <div class="card full">
                 <label>📝 전략 메모</label>
-                <textarea id="field-memo" style="width:100%; border:none; outline:none; resize:none; font-size:1rem;" rows="3" oninput="updateField('memo', this.value)" placeholder="매수 근거를 적어보세요..."></textarea>
+                <textarea id="field-memo" style="width:100%; border:none; outline:none; resize:none; font-size:1rem;" rows="3" oninput="updateField('memo', this.value)" placeholder="매수 전략..."></textarea>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Firebase 설정
+    // Firebase 설정 (기존 설정 유지)
     const firebaseConfig = {
         apiKey: "AIzaSyDIgzZzkJCNl_N2CTJpQzXYrxmymBqlq4A",
         authDomain: "stock-81b2d.firebaseapp.com",
@@ -193,9 +201,7 @@
         });
     }
 
-    function toggleMenu() {
-        document.getElementById('sidebar').classList.toggle('open');
-    }
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
 
     function selectItem(id) {
         currentId = id;
@@ -209,29 +215,29 @@
         const item = items.find(i => i.id === currentId);
         if(!item) return;
 
-        // 필드 업데이트 (입력 중이 아닐 때만)
         const fields = { 'item-title': 'title', 'entry-price': 'entryPrice', 'target-1': 'target1', 'target-2': 'target2', 'target-3': 'target3', 'field-memo': 'memo' };
         for (let [id, key] of Object.entries(fields)) {
             if(document.activeElement.id !== id) document.getElementById(id).value = item[key] || "";
         }
         
-        // 별점 토글 상태
         const stars = document.getElementById('star-container').children;
         for(let i=0; i<5; i++) stars[i].className = i < (item.rating || 0) ? 'active' : '';
 
-        // 기간 버튼 토글 상태
         document.querySelectorAll('.choice-btn').forEach(btn => {
             btn.className = btn.innerText === item.period ? 'choice-btn selected' : 'choice-btn';
         });
 
-        // 종가 히스토리 렌더링
+        // 히스토리 렌더링 (삭제 버튼 포함)
         const historyContainer = document.getElementById('close-history');
         historyContainer.innerHTML = '';
         if(item.history) {
-            Object.values(item.history).reverse().forEach(h => {
+            Object.entries(item.history).reverse().forEach(([historyKey, h]) => {
                 const span = document.createElement('span');
                 span.className = 'history-item';
-                span.innerText = `${h.date}: ${Number(h.price).toLocaleString()}원`;
+                span.innerHTML = `
+                    ${h.date}: ${Number(h.price).toLocaleString()}원 
+                    <span class="del-history" onclick="deleteHistory('${historyKey}')">×</span>
+                `;
                 historyContainer.appendChild(span);
             });
         }
@@ -242,27 +248,29 @@
         db.ref('stocks/' + currentId).update({ [field]: val, timestamp: Date.now() });
     }
 
-    // 토글 로직: 이미 선택된 값을 누르면 0 또는 빈값으로 변경
     function toggleRating(val) {
         const item = items.find(i => i.id === currentId);
-        const newVal = item.rating === val ? 0 : val;
-        updateField('rating', newVal);
+        updateField('rating', item.rating === val ? 0 : val);
     }
 
     function togglePeriod(val) {
         const item = items.find(i => i.id === currentId);
-        const newVal = item.period === val ? "" : val;
-        updateField('period', newVal);
+        updateField('period', item.period === val ? "" : val);
     }
 
-    // 종가 입력 (날짜 자동 포함)
     function handleClosePrice(e) {
         if(e.key === 'Enter' && e.target.value) {
             const now = new Date();
             const dateStr = `${now.getFullYear()}.${now.getMonth()+1}.${now.getDate()}`;
-            const newHistoryRef = db.ref(`stocks/${currentId}/history`).push();
-            newHistoryRef.set({ date: dateStr, price: e.target.value });
+            db.ref(`stocks/${currentId}/history`).push({ date: dateStr, price: e.target.value });
             e.target.value = '';
+        }
+    }
+
+    // 종가 히스토리 단일 삭제 함수
+    function deleteHistory(historyKey) {
+        if(confirm("이 기록을 삭제할까요?")) {
+            db.ref(`stocks/${currentId}/history/${historyKey}`).remove();
         }
     }
 
