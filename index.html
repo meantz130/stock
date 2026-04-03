@@ -83,7 +83,6 @@
             text-decoration: none; border-radius: 8px; font-size: 0.85rem;
             font-weight: 600; transition: var(--transition); box-sizing: border-box;
         }
-        /* 로그아웃 버튼 스타일 수정 */
         .logout-btn {
             width: 100%; padding: 10px 0; background: transparent; 
             color: var(--danger); border: 1px solid var(--danger);
@@ -96,6 +95,14 @@
         .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
         .menu-btn { display: none; background: var(--sidebar-bg); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
         @media (max-width: 768px) { .menu-btn { display: block; } }
+
+        /* 메인으로 가기 버튼 스타일 */
+        .home-btn { 
+            background: var(--white); color: var(--text-dark); border: 1px solid #e2e8f0; 
+            padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.8rem;
+            display: flex; align-items: center; gap: 5px; transition: var(--transition);
+        }
+        .home-btn:hover { background: #f8fafc; }
 
         .editor-container { max-width: 800px; margin: 0 auto; display: none; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -134,7 +141,7 @@
 
 <div id="sidebar">
     <div style="padding:20px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-weight:900; font-size:1.2rem; letter-spacing:-0.5px;">STOCK HUB</span>
+        <span style="font-weight:900; font-size:1.2rem; letter-spacing:-0.5px; cursor:pointer;" onclick="goHome()">STOCK HUB</span>
         <button onclick="addNewItem()" style="background:var(--accent); color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.75rem;">+ 추가</button>
     </div>
     
@@ -155,7 +162,8 @@
 <div id="main-content">
     <div class="top-bar">
         <button class="menu-btn" onclick="toggleMenu()">☰ 메뉴</button>
-        <h2 style="margin:0; font-size:1.2rem; font-weight:900; color:var(--text-dark);">Market Intelligence</h2>
+        <h2 style="margin:0; font-size:1.2rem; font-weight:900; color:var(--text-dark); flex:1;">Market Intelligence</h2>
+        <button class="home-btn" onclick="goHome()">🏠 메인으로</button>
     </div>
 
     <div id="placeholder" style="text-align: center; margin-top: 15vh; color: #cbd5e1;">
@@ -188,6 +196,11 @@
         </div>
 
         <div class="card">
+            <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">💰 수익실현 기록 (Sell Log)</label>
+            <textarea id="field-realized" rows="3" placeholder="예: 24/04/03 50,000원 수익실현 완료" oninput="updateField('realizedLog', this.value)"></textarea>
+        </div>
+
+        <div class="card">
             <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">🚀 예상 매수 지점</label>
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
                 <div class="price-box"><label>1차</label><input type="number" id="t1" oninput="updateField('t1', this.value)"></div>
@@ -204,7 +217,7 @@
         </div>
 
         <div class="card">
-            <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:10px; display:block;">📝 메모</label>
+            <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:10px; display:block;">📝 분석 메모</label>
             <textarea id="field-memo" rows="4" oninput="updateField('memo', this.value)"></textarea>
         </div>
     </div>
@@ -229,26 +242,17 @@
         const email = document.getElementById('login-email').value;
         const pw = document.getElementById('login-pw').value;
         const errEl = document.getElementById('login-error');
-
-        auth.signInWithEmailAndPassword(email, pw)
-            .catch((error) => {
-                errEl.style.display = 'block';
-            });
+        auth.signInWithEmailAndPassword(email, pw).catch(() => { errEl.style.display = 'block'; });
     }
 
     function handleLogout() {
         if(confirm("로그아웃 하시겠습니까?")) {
-            auth.signOut().then(() => {
-                location.reload();
-            });
+            auth.signOut().then(() => { location.reload(); });
         }
     }
 
-    // 인증 상태 감시
     auth.onAuthStateChanged((user) => {
-        // 인증 확인 절차가 끝나면 로딩 레이어를 제거합니다.
         document.getElementById('loading-overlay').style.display = 'none';
-
         if (user) {
             document.getElementById('login-overlay').style.display = 'none';
             const userName = user.email.split('@')[0];
@@ -271,6 +275,15 @@
     }
 
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+
+    // 초기 화면(메인)으로 돌아가는 함수
+    function goHome() {
+        currentId = null;
+        lastClickedId = null;
+        document.getElementById('editor').style.display = 'none';
+        document.getElementById('placeholder').style.display = 'block';
+        renderList(); // 선택 하이라이트 해제
+    }
 
     function handleManualSave(e) {
         if(e.key === 'Enter' && e.target.value && currentId) {
@@ -344,7 +357,15 @@
         pRateEl.className = profitRate >= 0 ? "profit-pos" : "profit-neg";
         pAmtEl.className = profitRate >= 0 ? "profit-pos" : "profit-neg";
 
-        const fields = {'item-title': item.title, 'hold-count': item.holdCount, 'hold-avg': item.holdAvg, 't1': item.t1, 't2': item.t2, 't3': item.t3, 'field-memo': item.memo};
+        // 필드 동기화 (수익실현 로그 포함)
+        const fields = {
+            'item-title': item.title, 
+            'hold-count': item.holdCount, 
+            'hold-avg': item.holdAvg, 
+            't1': item.t1, 't2': item.t2, 't3': item.t3, 
+            'field-memo': item.memo,
+            'field-realized': item.realizedLog
+        };
         Object.entries(fields).forEach(([id, val]) => { if(document.activeElement.id !== id) document.getElementById(id).value = val || ""; });
 
         renderHistory(historyArr);
@@ -377,7 +398,7 @@
     function changePage(step) { historyPage += step; syncEditor(); }
     function updateField(f, v) { if(currentId) db.ref(`stocks/${currentId}`).update({ [f]: v }); }
     function deleteHistory(key) { if(confirm("기록을 삭제할까요?")) db.ref(`stocks/${currentId}/manualHistory/${key}`).remove(); }
-    function deleteStock() { if(confirm("삭제하시겠습니까?")) { db.ref(`stocks/${currentId}`).remove(); currentId = null; lastClickedId = null; document.getElementById('editor').style.display = 'none'; document.getElementById('placeholder').style.display = 'block'; } }
+    function deleteStock() { if(confirm("삭제하시겠습니까?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
     function addNewItem() { const ref = db.ref('stocks').push(); ref.set({ title: "새 종목 분석", holdCount: 0, holdAvg: 0 }); currentId = ref.key; lastClickedId = ref.key; }
 </script>
 </body>
