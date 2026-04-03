@@ -258,17 +258,17 @@
             const history = item.manualHistory ? Object.values(item.manualHistory).sort((a,b) => b.ts - a.ts) : [];
 
             // 최신 종가가 있으면 종가 사용, 없으면 평단가 사용 (평가액 0원 방지)
-            const latestPrice = history.length > 0 ? Number(history[0].price) : (Number(item.holdAvg) || 0);
+            const latestPrice = history.length > 0 ? Number(history[0].price || 0) : Number(item.holdAvg || 0);
             
             totalStockEvaluation += count * latestPrice;
         });
 
         // 메인 화면 표시 업데이트
         document.getElementById('main-total-stock').innerText = totalStockEvaluation.toLocaleString() + "원";
-        document.getElementById('main-display-cash').innerText = userCash.toLocaleString() + "원";
+        document.getElementById('main-display-cash').innerText = (Number(userCash) || 0).toLocaleString() + "원";
 
         // 총 자산 = 종목 평가 합계 + 예수금
-        const totalAsset = totalStockEvaluation + userCash;
+        const totalAsset = totalStockEvaluation + (Number(userCash) || 0);
         document.getElementById('total-asset-value').innerText = totalAsset.toLocaleString() + "원";
     }
 
@@ -320,12 +320,15 @@
     function renderRealizedList() {
         const container = document.getElementById('realized-list');
         const pager = document.getElementById('realized-pager');
+        if (!container || !pager) return; // 요소가 없으면 중단
+        
         container.innerHTML = '';
         const totalPages = Math.ceil(realizedProfits.length / realizedLimit) || 1;
         const paged = realizedProfits.slice((realizedPage-1)*realizedLimit, realizedPage*realizedLimit);
         
         paged.forEach(p => {
             const priceValue = (p && p.price !== undefined && p.price !== null) ? Number(p.price) : 0;
+            const itemName = p.name || "이름 없음";
             
             const isLoss = priceValue < 0; // 마이너스 금액인지 확인
             const color = isLoss ? 'var(--target)' : 'var(--danger)'; // 손실이면 블루, 수익이면 레드
@@ -334,7 +337,7 @@
             const div = document.createElement('div');
             div.className = 'history-item';
             div.innerHTML = `
-                <span>${p.name || "이름 없음"}</span>
+                <span>${itemName}</span>
                 <b style="color:${color}">${prefix}${priceValue.toLocaleString()}원</b>
                 <span onclick="deleteRealized('${p.id}')" style="cursor:pointer; opacity:0.3; padding-left:10px;">×</span>
             `;
