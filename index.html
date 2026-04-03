@@ -219,55 +219,40 @@
     function handleLogout() { auth.signOut().then(() => location.reload()); }
 
     auth.onAuthStateChanged((user) => {
+        // 어떤 에러가 나더라도 로딩 화면은 무조건 숨김
         const loader = document.getElementById('loading-overlay');
         if (loader) loader.style.display = 'none';
 
-        try {
-            if (user) {
-                document.getElementById('login-overlay').style.display = 'none';
-                const userName = user.email ? user.email.split('@')[0] : "사용자";
-                document.getElementById('user-display-name').innerText = `환영합니다. ${userName} 사용자님.`;
-                initApp();
-            } else {
-                document.getElementById('login-overlay').style.display = 'flex';
-            }
-        } catch (e) {
-            console.error("앱 초기화 중 에러 발생:", e);
-            // 에러가 나더라도 로그인은 시도할 수 있게 처리
+        if (user) {
+            document.getElementById('login-overlay').style.display = 'none';
+            const userName = user.email ? user.email.split('@')[0] : "사용자";
+            document.getElementById('user-display-name').innerText = `환영합니다. ${userName}님.`;
+            initApp();
+        } else {
             document.getElementById('login-overlay').style.display = 'flex';
         }
     });
 
     function initApp() {
-        // 1. 종목 데이터 로드
         db.ref('stocks').on('value', (snap) => {
             const data = snap.val();
             items = data ? Object.keys(data).map(k => ({id:k, ...data[k]})) : [];
             renderList();
             calculateTotal();
             if(currentId) syncEditor();
-        }, (error) => console.error("Stocks 로드 에러:", error));
-        // 2. 예수금 로드
+        });
         db.ref('user_cash').on('value', (snap) => {
             userCash = Number(snap.val()) || 0;
             const cashInput = document.getElementById('cash-input');
             if(cashInput) cashInput.value = userCash || "";
             calculateTotal();
         });
-        3. 수익 기록 로드 (에러 방어막 강화)
         db.ref('realized_profits').on('value', (snap) => {
-            try {
-                const data = snap.val();
-                // 데이터가 있으면 배열로 만들고 뒤집기, 없으면 빈 배열
-                realizedProfits = data ? Object.keys(data).map(k => ({id:k, ...data[k]})).reverse() : [];
-                renderRealizedList();
-            } catch (e) {
-                console.error("수익 기록 처리 중 에러:", e);
-                realizedProfits = [];
-            }
+            const data = snap.val();
+            realizedProfits = data ? Object.keys(data).map(k => ({id:k, ...data[k]})).reverse() : [];
+            renderRealizedList();
         });
     }
-
 
     function toggleMenu() {
         document.getElementById('sidebar').classList.toggle('open');
@@ -275,22 +260,15 @@
     }
 
     function calculateTotal() {
-        let totalStockEvaluation = 0; // 종가 기준 종목 총 평가액
+        let totalStockEvaluation = 0;
         items.forEach(item => {
             const count = Number(item.holdCount) || 0;
             const history = item.manualHistory ? Object.values(item.manualHistory).sort((a,b) => b.ts - a.ts) : [];
-
-            // 최신 종가가 있으면 종가 사용, 없으면 평단가 사용 (평가액 0원 방지)
             const latestPrice = history.length > 0 ? Number(history[0].price) : (Number(item.holdAvg) || 0);
-            
             totalStockEvaluation += count * latestPrice;
         });
-
-        // 메인 화면 표시 업데이트
         document.getElementById('main-total-stock').innerText = totalStockEvaluation.toLocaleString() + "원";
         document.getElementById('main-display-cash').innerText = userCash.toLocaleString() + "원";
-
-        // 총 자산 = 종목 평가 합계 + 예수금
         const totalAsset = totalStockEvaluation + userCash;
         document.getElementById('total-asset-value').innerText = totalAsset.toLocaleString() + "원";
     }
@@ -309,119 +287,58 @@
                 syncEditor();
                 renderList();
             };
-            
             const avg = Number(item.holdAvg || 0).toLocaleString();
             const t3 = item.target3 ? Number(item.target3).toLocaleString() : '-';
-            
-            div.innerHTML = `
-                <div style="font-weight:bold;">${item.title || "새 종목"}</div>
-                <div class="item-row">
-                    <div class="item-info-left">평단: ${avg}</div>
-                    <div class="item-info-right">희망가: ${t3}</div>
-                </div>
-            `;
+            div.innerHTML = `<div style="font-weight:bold;">${item.title || "새 종목"}</div><div class="item-row"><div class="item-info-left">평단: ${avg}</div><div class="item-info-right">희망가: ${t3}</div></div>`;
             container.appendChild(div);
         });
-    }
-
-    function addRealizedProfit() {
-        const name = document.getElementById('realized-name').value;
-        const price = document.getElementById('realized-price').value;
-        if(!name || price === "") return; // 금액이 비어있으면 리턴
-
-        db.ref('realized_profits').push({
-            name,
-            price: Number(price), // 음수 입력 시 자동으로 마이너스 숫자로 저장됨
-            date: new Date().toLocaleDateString(),
-            ts: Date.now()
-        });
-
-        document.getElementById('realized-name').value = '';
-        document.getElementById('realized-price').value = '';
     }
 
     function renderRealizedList() {
         const container = document.getElementById('realized-list');
         const pager = document.getElementById('realized-pager');
-        if (!container) return; // 컨테이너가 없으면 종료
-        
+        if (!container) return;
         container.innerHTML = '';
-        const list = realizedProfits || [];
-        const totalPages = Math.ceil(list.length / realizedLimit) || 1;
-        const paged = list.slice((realizedPage-1)*realizedLimit, realizedPage*realizedLimit);
-        
+        const totalPages = Math.ceil(realizedProfits.length / realizedLimit) || 1;
+        const paged = realizedProfits.slice((realizedPage-1)*realizedLimit, realizedPage*realizedLimit);
         paged.forEach(p => {
-            // --- 수정 포인트: price가 없으면 0으로 처리 ---
-            const priceValue = (p && p.price !== undefined) ? Number(p.price) : 0;
-            const nameValue = (p && p.name) ? p.name : "이름 없음";
-            
-            const isLoss = priceValue < 0; // 마이너스 금액인지 확인
-            const color = isLoss ? 'var(--target)' : 'var(--danger)'; // 손실이면 블루, 수익이면 레드
-            const prefix = priceValue > 0 ? '+' : ''; // 양수일 때만 + 기호 추가
-
+            const priceValue = Number(p.price) || 0;
+            const isLoss = priceValue < 0;
+            const color = isLoss ? 'var(--target)' : 'var(--danger)';
+            const prefix = priceValue > 0 ? '+' : '';
             const div = document.createElement('div');
             div.className = 'history-item';
-            div.innerHTML = `
-                <span>${p.name || '이름 없음'}</span>
-                <b style="color:${color}">${prefix}${(p.price || 0).toLocaleString()}원</b>
-                <span onclick="deleteRealized('${p.id}')" style="cursor:pointer; opacity:0.3; padding-left:10px;">×</span>
-            `;
+            div.innerHTML = `<span>${p.name || '이름없음'}</span><b style="color:${color}">${prefix}${priceValue.toLocaleString()}원</b><span onclick="deleteRealized('${p.id}')" style="cursor:pointer; opacity:0.3; padding-left:10px;">×</span>`;
             container.appendChild(div);
         });
-
-        if (pager) { pager.innerHTML = `<button onclick="realizedPage=Math.max(1, realizedPage-1); renderRealizedList();">이전</button> <span>${realizedPage}/${totalPages}</span> <button onclick="realizedPage=Math.min(${totalPages}, realizedPage+1); renderRealizedList();">다음</button>`; }     
+        if(pager) pager.innerHTML = `<button onclick="realizedPage=Math.max(1, realizedPage-1); renderRealizedList();">이전</button> <span>${realizedPage}/${totalPages}</span> <button onclick="realizedPage=Math.min(${totalPages}, realizedPage+1); renderRealizedList();">다음</button>`;
     }
 
     function syncEditor() {
         const item = items.find(i => i.id === currentId);
         if(!item) return;
-
         const historyArr = item.manualHistory ? Object.entries(item.manualHistory).map(([k, v]) => ({k, ...v})).sort((a,b) => b.ts - a.ts) : [];
         const count = Number(item.holdCount) || 0;
         const avg = Number(item.holdAvg) || 0;
-
-        // 최신 종가 (기록이 없으면 0)
         const latestPrice = historyArr.length > 0 ? Number(historyArr[0].price) : 0;
-
-        // 1. 매수 시 제비용 계산 (매수 총액 + 매수 수수료 0.015%)
         const buyRaw = count * avg;
         const buyFee = buyRaw * 0.00015;
         const totalPurchaseCost = buyRaw + buyFee;
-
-        // 2. 매도 시 예상 제비용 계산 (평가 총액 - 매도 수수료 0.015% - 세금 0.20%)
         const evalRaw = count * latestPrice;
         const sellFee = evalRaw * 0.00015;
         const sellTax = evalRaw * 0.0020;
         const totalEstimatedReturn = evalRaw - (sellFee + sellTax);
-
-        // 3. 최종 순수익 및 수익률 계산
         const diff = totalEstimatedReturn - totalPurchaseCost;
         const percent = totalPurchaseCost > 0 ? (diff / totalPurchaseCost) * 100 : 0;
-
-        // 화면 표시 요소
         const profitAmountEl = document.getElementById('profit-amount');
         const profitPercentEl = document.getElementById('profit-percent');
-
         let displayDiff = Math.floor(diff).toLocaleString() + "원";
         if (diff > 0) displayDiff = "+" + displayDiff;
-
-        // 평가금액 부분에 제비용이 차감된 '실제 손에 쥐는 금액' 표시
         profitAmountEl.innerText = `${displayDiff} (예상정산: ${Math.floor(totalEstimatedReturn).toLocaleString()}원)`;
         profitPercentEl.innerText = `${percent.toFixed(2)}%`;
-
-        // 색상 적용: 양수(레드), 음수(블루), 0(기본)
-        if (diff > 1) { // 소수점 오차 고려하여 1원 초과 시
-            profitAmountEl.style.color = 'var(--danger)';
-            profitPercentEl.style.color = 'var(--danger)';
-        } else if (diff < -1) {
-            profitAmountEl.style.color = 'var(--target)';
-            profitPercentEl.style.color = 'var(--target)';
-        } else {
-            profitAmountEl.style.color = 'var(--text-dark)';
-            profitPercentEl.style.color = 'var(--text-dark)';
-        }
-
-        // 기존 입력 필드 값 유지
+        if (diff > 1) { profitAmountEl.style.color = 'var(--danger)'; profitPercentEl.style.color = 'var(--danger)'; }
+        else if (diff < -1) { profitAmountEl.style.color = 'var(--target)'; profitPercentEl.style.color = 'var(--target)'; }
+        else { profitAmountEl.style.color = 'var(--text-dark)'; profitPercentEl.style.color = 'var(--text-dark)'; }
         document.getElementById('item-title').value = item.title || "";
         document.getElementById('hold-count').value = item.holdCount || "";
         document.getElementById('hold-avg').value = item.holdAvg || "";
@@ -438,7 +355,6 @@
         hList.innerHTML = '';
         const totalPages = Math.ceil(arr.length / historyLimit) || 1;
         const paged = arr.slice((historyPage-1)*historyLimit, historyPage*historyLimit);
-
         paged.forEach(h => {
             const div = document.createElement('div');
             div.className = 'history-item';
@@ -456,7 +372,6 @@
             e.target.value = '';
         }
     }
-
     function updateField(f, v) { if(currentId) db.ref(`stocks/${currentId}`).update({ [f]: v }); }
     function updateCash(v) { db.ref('user_cash').set(Number(v)); }
     function deleteHistory(k) { if(confirm("삭제?")) db.ref(`stocks/${currentId}/manualHistory/${k}`).remove(); }
@@ -464,6 +379,14 @@
     function deleteStock() { if(confirm("종목을 삭제하시겠습니까?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
     function addNewItem() { db.ref('stocks').push({ title: "새 종목", holdCount: 0, holdAvg: 0 }); }
     function goHome() { currentId = null; document.getElementById('editor').style.display = 'none'; document.getElementById('main-dashboard').style.display = 'block'; renderList(); }
+    function addRealizedProfit() {
+        const name = document.getElementById('realized-name').value;
+        const price = document.getElementById('realized-price').value;
+        if(!name || price === "") return;
+        db.ref('realized_profits').push({ name, price: Number(price), date: new Date().toLocaleDateString(), ts: Date.now() });
+        document.getElementById('realized-name').value = '';
+        document.getElementById('realized-price').value = '';
+    }
 </script>
 </body>
 </html>
