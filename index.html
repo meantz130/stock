@@ -349,10 +349,12 @@
     function syncEditor() {
         const item = items.find(i => i.id === currentId);
         if(!item) return;
+        // 히스토리를 타임스탬프(ts) 기준으로 내림차순 정렬하여 가장 최신것이 인덱스 0에 오도록 함
         const historyArr = item.manualHistory ? Object.entries(item.manualHistory).map(([k, v]) => ({k, ...v})).sort((a,b) => b.ts - a.ts) : [];
         const latestPrice = historyArr.length > 0 ? historyArr[0].price : 0;
         const count = Number(item.holdCount) || 0, avg = Number(item.holdAvg) || 0;
         
+        // 최신 종가가 있으면 최신 종가로, 없으면 평균 단가로 계산
         const evalAmt = count * (latestPrice || avg);
         const buyAmt = count * avg;
         const diff = evalAmt - buyAmt;
@@ -382,7 +384,13 @@
 
         pagedItems.forEach(item => {
             const div = document.createElement('div'); div.className = 'history-item';
-            div.innerHTML = `<span>${item.date}</span> <b style="flex:1; text-align:right; margin-right:15px;">${item.price.toLocaleString()}원</b> <span style="cursor:pointer; color:#ccc;" onclick="deleteHistory('${item.k}')">×</span>`;
+            // 표시되는 날짜 형식을 YY.M.D로 강제 (기존 데이터 호환)
+            let displayDate = item.date;
+            if (item.ts) {
+                const d = new Date(item.ts);
+                displayDate = `${String(d.getFullYear()).slice(-2)}.${d.getMonth() + 1}.${d.getDate()}`;
+            }
+            div.innerHTML = `<span>${displayDate}</span> <b style="flex:1; text-align:right; margin-right:15px;">${item.price.toLocaleString()}원</b> <span style="cursor:pointer; color:#ccc;" onclick="deleteHistory('${item.k}')">×</span>`;
             hList.appendChild(div);
         });
 
@@ -402,15 +410,15 @@
     function handleManualSave(e) {
         if(e.key === 'Enter' && e.target.value && currentId) {
             const now = new Date();
-            // 요청하신 형식: 26.4.3 (YY.M.D)
+            // YY.M.D 형식 생성 (예: 26.4.3)
             const dateStr = `${String(now.getFullYear()).slice(-2)}.${now.getMonth() + 1}.${now.getDate()}`;
             db.ref(`stocks/${currentId}/manualHistory`).push({ 
                 date: dateStr, 
                 price: Number(e.target.value), 
-                ts: Date.now() 
+                ts: Date.now() // 최신순 정렬을 위한 타임스탬프
             });
             e.target.value = '';
-            historyPage = 1; 
+            historyPage = 1; // 입력 시 최신 페이지로 이동
         }
     }
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
