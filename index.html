@@ -331,6 +331,8 @@
         const paged = realizedProfits.slice((realizedPage-1)*realizedLimit, realizedPage*realizedLimit);
         
         paged.forEach(p => {
+            const safePrice = Number(p.price) || 0;
+
             const isLoss = p.price < 0; // 마이너스 금액인지 확인
             const color = isLoss ? 'var(--target)' : 'var(--danger)'; // 손실이면 블루, 수익이면 레드
             const prefix = p.price > 0 ? '+' : ''; // 양수일 때만 + 기호 추가
@@ -338,8 +340,8 @@
             const div = document.createElement('div');
             div.className = 'history-item';
             div.innerHTML = `
-                <span>${p.name}</span>
-                <b style="color:${color}">${prefix}${p.price.toLocaleString()}원</b>
+                <span>${p.name || "이름 없음"}</span>
+                <b style="color:${color}">${prefix}${safePrice.toLocaleString()}원</b>
                 <span onclick="deleteRealized('${p.id}')" style="cursor:pointer; opacity:0.3; padding-left:10px;">×</span>
             `;
             container.appendChild(div);
