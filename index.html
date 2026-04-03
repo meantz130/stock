@@ -73,15 +73,8 @@
         .list-item strong { display: block; margin-bottom: 3px; font-size: 0.95rem; }
         .list-item .info-row { display: flex; justify-content: space-between; align-items: center; }
         .list-item small { color: var(--text-light); font-size: 0.7rem; }
-        .list-item .target-tag { font-size: 0.65rem; color: var(--entry); border: 1px solid var(--entry); padding: 0px 4px; border-radius: 3px; }
 
         .sidebar-footer { padding: 12px; background: #1a1c23; border-top: 1px solid #2d3139; display: flex; flex-direction: column; gap: 8px; }
-        .link-btn {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            width: 100%; padding: 10px 0; background: #2d3139; color: white;
-            text-decoration: none; border-radius: 8px; font-size: 0.85rem;
-            font-weight: 600; transition: var(--transition); box-sizing: border-box;
-        }
         .logout-btn {
             width: 100%; padding: 10px 0; background: transparent; 
             color: var(--danger); border: 1px solid var(--danger);
@@ -126,11 +119,7 @@
         textarea { font-weight: 400; line-height: 1.5; font-size: 0.9rem; }
         
         .history-item { background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; }
-        .profit-pos { color: var(--danger); }
-        .profit-neg { color: var(--target); }
         .editor-container { max-width: 800px; margin: 0 auto; display: none; animation: fadeIn 0.3s ease; }
-
-        /* 페이지네이션 스타일 추가 */
         .pagination-ctrl { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; font-size: 0.85rem; }
         .pagination-ctrl button { background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .pagination-ctrl button:disabled { opacity: 0.4; cursor: default; }
@@ -139,7 +128,6 @@
 <body>
 
 <div id="loading-overlay">로딩중입니다...</div>
-
 <div id="login-overlay" style="display:none;">
     <div class="login-card">
         <h2 style="color:var(--text-dark); margin-bottom:20px;">STOCK HUB</h2>
@@ -154,13 +142,11 @@
         <span style="font-weight:900; font-size:1.2rem; cursor:pointer;" onclick="goHome()">STOCK HUB</span>
         <button onclick="addNewItem()" style="background:var(--accent); color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.75rem;">+ 추가</button>
     </div>
-    
     <div class="user-welcome" id="user-display-name">환영합니다</div>
     <div class="total-asset-box">
         <span>총 자산 (평가액+예수금)</span>
         <div id="total-asset-value">0원</div>
     </div>
-
     <div id="item-list"></div>
     <div class="sidebar-footer">
         <button onclick="handleLogout()" class="logout-btn">로그아웃</button>
@@ -195,14 +181,12 @@
                 </div>
             </div>
         </div>
-
         <div class="card">
             <label style="font-size:0.8rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">💰 예수금(현금) 관리</label>
             <div class="realized-input-group">
                 <input type="number" id="cash-input" placeholder="현재 보유 중인 현금 입력" oninput="updateCash(this.value)">
             </div>
         </div>
-
         <div class="card">
             <label style="font-size:0.8rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">📝 수익실현(매도) 기록</label>
             <div class="realized-input-group">
@@ -219,7 +203,6 @@
             <input type="text" id="item-title" placeholder="종목명" oninput="updateField('title', this.value)" style="flex:1; font-size:1.5rem; font-weight:800; border:none; color:var(--text-dark);">
             <button style="color:var(--danger); background:#fee2e2; border:none; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem;" onclick="deleteStock()">삭제</button>
         </div>
-
         <div class="card">
             <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">💼 실시간 포지션</label>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:15px;">
@@ -237,23 +220,12 @@
                 평가액: <span id="item-asset-sum" style="color:var(--accent);">0</span>원
             </div>
         </div>
-
-        <div class="card">
-            <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">🚀 예상 매수 지점</label>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-                <div class="price-box"><label>1차</label><input type="number" id="t1" oninput="updateField('t1', this.value)"></div>
-                <div class="price-box"><label>2차</label><input type="number" id="t2" oninput="updateField('t2', this.value)"></div>
-                <div class="price-box"><label>3차</label><input type="number" id="t3" oninput="updateField('t3', this.value)"></div>
-            </div>
-        </div>
-
         <div class="card">
             <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">📅 종가 히스토리</label>
             <input type="number" id="manual-close-input" style="border-bottom:2px solid #f1f5f9; margin-bottom:10px; font-size:0.9rem;" placeholder="금액 입력 + Enter" onkeydown="handleManualSave(event)">
             <div id="history-list"></div>
             <div class="pagination-ctrl" id="history-pager"></div>
         </div>
-
         <div class="card">
             <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:10px; display:block;">📝 메모</label>
             <textarea id="field-memo" rows="4" oninput="updateField('memo', this.value)"></textarea>
@@ -310,7 +282,6 @@
     }
 
     function updateCash(val) { db.ref('user_cash').set(Number(val)); }
-
     function goHome() {
         currentId = null; lastClickedId = null;
         document.getElementById('editor').style.display = 'none';
@@ -382,7 +353,6 @@
         const latestPrice = historyArr.length > 0 ? historyArr[0].price : 0;
         const count = Number(item.holdCount) || 0, avg = Number(item.holdAvg) || 0;
         
-        // 수익률 및 수익금 계산
         const evalAmt = count * (latestPrice || avg);
         const buyAmt = count * avg;
         const diff = evalAmt - buyAmt;
@@ -394,7 +364,7 @@
         document.getElementById('profit-percent').innerText = `${percent >= 0 ? '+' : ''}${percent.toFixed(2)}%`;
         document.getElementById('profit-percent').style.color = percent >= 0 ? 'var(--danger)' : 'var(--target)';
 
-        const fields = {'item-title': item.title, 'hold-count': item.holdCount, 'hold-avg': item.holdAvg, 't1': item.t1, 't2': item.t2, 't3': item.t3, 'field-memo': item.memo};
+        const fields = {'item-title': item.title, 'hold-count': item.holdCount, 'hold-avg': item.holdAvg, 'field-memo': item.memo};
         Object.entries(fields).forEach(([id, val]) => { if(document.activeElement.id !== id) document.getElementById(id).value = val || ""; });
         renderHistory(historyArr);
     }
@@ -404,13 +374,11 @@
         const pager = document.getElementById('history-pager');
         hList.innerHTML = '';
         
-        // 페이징 처리
         const totalPages = Math.ceil(historyArr.length / historyLimit) || 1;
         if(historyPage > totalPages) historyPage = totalPages;
 
         const start = (historyPage - 1) * historyLimit;
-        const end = start + historyLimit;
-        const pagedItems = historyArr.slice(start, end);
+        const pagedItems = historyArr.slice(start, start + historyLimit);
 
         pagedItems.forEach(item => {
             const div = document.createElement('div'); div.className = 'history-item';
@@ -418,7 +386,6 @@
             hList.appendChild(div);
         });
 
-        // 페이징 컨트롤러
         pager.innerHTML = `
             <button onclick="changeHistoryPage(-1)" ${historyPage === 1 ? 'disabled' : ''}>이전</button>
             <span>${historyPage} / ${totalPages}</span>
@@ -426,27 +393,24 @@
         `;
     }
 
-    function changeHistoryPage(dir) {
-        historyPage += dir;
-        syncEditor();
-    }
-
+    function changeHistoryPage(dir) { historyPage += dir; syncEditor(); }
     function updateField(f, v) { if(currentId) db.ref(`stocks/${currentId}`).update({ [f]: v }); }
-    function deleteHistory(key) { if(confirm("삭제하시겠습니까?")) db.ref(`stocks/${currentId}/manualHistory/${key}`).remove(); }
-    function deleteStock() { if(confirm("종목을 삭제하시겠습니까?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
+    function deleteHistory(key) { if(confirm("삭제?")) db.ref(`stocks/${currentId}/manualHistory/${key}`).remove(); }
+    function deleteStock() { if(confirm("삭제?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
     function addNewItem() { const ref = db.ref('stocks').push(); ref.set({ title: "새 종목", holdCount: 0, holdAvg: 0 }); }
     
     function handleManualSave(e) {
         if(e.key === 'Enter' && e.target.value && currentId) {
             const now = new Date();
-            const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+            // 요청하신 형식: 26.4.3 (YY.M.D)
+            const dateStr = `${String(now.getFullYear()).slice(-2)}.${now.getMonth() + 1}.${now.getDate()}`;
             db.ref(`stocks/${currentId}/manualHistory`).push({ 
                 date: dateStr, 
                 price: Number(e.target.value), 
                 ts: Date.now() 
             });
             e.target.value = '';
-            historyPage = 1; // 새 입력 시 첫 페이지로 이동
+            historyPage = 1; 
         }
     }
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
