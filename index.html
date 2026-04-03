@@ -219,13 +219,21 @@
     function handleLogout() { auth.signOut().then(() => location.reload()); }
 
     auth.onAuthStateChanged((user) => {
-        document.getElementById('loading-overlay').style.display = 'none';
-        if (user) {
-            document.getElementById('login-overlay').style.display = 'none';
-            const userName = user.email.split('@')[0];
-            document.getElementById('user-display-name').innerText = `환영합니다. ${userName} 사용자님.`;
-            initApp();
-        } else {
+        const loader = document.getElementById('loading-overlay');
+        if (loader) loader.style.display = 'none';
+
+        try {
+            if (user) {
+                document.getElementById('login-overlay').style.display = 'none';
+                const userName = user.email ? user.email.split('@')[0] : "사용자";
+                document.getElementById('user-display-name').innerText = `환영합니다. ${userName} 사용자님.`;
+                initApp();
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+            }
+        } catch (e) {
+            console.error("앱 초기화 중 에러 발생:", e);
+            // 에러가 나더라도 로그인은 시도할 수 있게 처리
             document.getElementById('login-overlay').style.display = 'flex';
         }
     });
@@ -327,12 +335,14 @@
         if (!container) return; // 컨테이너가 없으면 종료
         
         container.innerHTML = '';
-        const totalPages = Math.ceil(realizedProfits.length / realizedLimit) || 1;
-        const paged = realizedProfits.slice((realizedPage-1)*realizedLimit, realizedPage*realizedLimit);
+        const list = realizedProfits || [];
+        const totalPages = Math.ceil(list.length / realizedLimit) || 1;
+        const paged = list.slice((realizedPage-1)*realizedLimit, realizedPage*realizedLimit);
         
         paged.forEach(p => {
             // --- 수정 포인트: price가 없으면 0으로 처리 ---
-            const priceValue = Number(p.price) || 0;
+            const priceValue = (p && p.price !== undefined) ? Number(p.price) : 0;
+            const nameValue = (p && p.name) ? p.name : "이름 없음";
             
             const isLoss = priceValue < 0; // 마이너스 금액인지 확인
             const color = isLoss ? 'var(--target)' : 'var(--danger)'; // 손실이면 블루, 수익이면 레드
