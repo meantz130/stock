@@ -351,11 +351,24 @@
         const profitAmountEl = document.getElementById('profit-amount');
         const profitPercentEl = document.getElementById('profit-percent');
 
-        profitAmountEl.innerText = `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원 (평가: ${evalTotal.toLocaleString()}원)`;
+        // --- 수정된 계산 및 색상 로직 ---
+        let displayDiff = diff.toLocaleString() + "원";
+        if (diff > 0) displayDiff = "+" + displayDiff; // 양수일 때 + 추가 (음수는 자동으로 -가 붙음)
+
+        profitAmountEl.innerText = `${displayDiff} (평가: ${evalTotal.toLocaleString()}원)`;
         profitPercentEl.innerText = `${percent.toFixed(2)}%`;
 
-        // 색상 변경 (양수 레드, 음수 블루)
-        profitPercentEl.style.color = percent > 0 ? 'var(--danger)' : (percent < 0 ? 'var(--target)' : 'var(--text-dark)');
+        // 색상 적용: 양수(레드), 음수(블루), 0(기본)
+        if (diff > 0) {
+            profitAmountEl.style.color = 'var(--danger)';
+            profitPercentEl.style.color = 'var(--danger)';
+        } else if (diff < 0) {
+            profitAmountEl.style.color = 'var(--target)'; // CSS 변수의 블루 색상
+            profitPercentEl.style.color = 'var(--target)';
+        } else {
+            profitAmountEl.style.color = 'var(--text-dark)';
+            profitPercentEl.style.color = 'var(--text-dark)';
+        }
 
         // 기존 입력 필드 값 유지
         document.getElementById('item-title').value = item.title || "";
