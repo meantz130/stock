@@ -353,32 +353,38 @@
         // 최신 종가 (기록이 없으면 0)
         const latestPrice = historyArr.length > 0 ? Number(historyArr[0].price) : 0;
 
-        // 매수 총액 = 수량 * 평단가
-        const buyTotal = count * avg;
-        // 현재 평가 총액 = 수량 * 최신 종가
-        const evalTotal = count * latestPrice;
-        // 수익금 = 평가 총액 - 매수 총액
-        const diff = evalTotal - buyTotal;
-        // 수익률 = (수익금 / 매수 총액) * 100
-        const percent = buyTotal > 0 ? (diff / buyTotal) * 100 : 0;
+        // 1. 매수 시 제비용 계산 (매수 총액 + 매수 수수료 0.015%)
+        const buyRaw = count * avg;
+        const buyFee = buyRaw * 0.00015;
+        const totalPurchaseCost = buyRaw + buyFee;
 
-        // 화면 표시 (수익금 및 퍼센트)
+        // 2. 매도 시 예상 제비용 계산 (평가 총액 - 매도 수수료 0.015% - 세금 0.20%)
+        const evalRaw = count * latestPrice;
+        const sellFee = evalRaw * 0.00015;
+        const sellTax = evalRaw * 0.0020;
+        const totalEstimatedReturn = evalRaw - (sellFee + sellTax);
+
+        // 3. 최종 순수익 및 수익률 계산
+        const diff = totalEstimatedReturn - totalPurchaseCost;
+        const percent = totalPurchaseCost > 0 ? (diff / totalPurchaseCost) * 100 : 0;
+
+        // 화면 표시 요소
         const profitAmountEl = document.getElementById('profit-amount');
         const profitPercentEl = document.getElementById('profit-percent');
 
-        // --- 수정된 계산 및 색상 로직 ---
-        let displayDiff = diff.toLocaleString() + "원";
-        if (diff > 0) displayDiff = "+" + displayDiff; // 양수일 때 + 추가 (음수는 자동으로 -가 붙음)
+        let displayDiff = Math.floor(diff).toLocaleString() + "원";
+        if (diff > 0) displayDiff = "+" + displayDiff;
 
-        profitAmountEl.innerText = `${displayDiff} (평가: ${evalTotal.toLocaleString()}원)`;
+        // 평가금액 부분에 제비용이 차감된 '실제 손에 쥐는 금액' 표시
+        profitAmountEl.innerText = `${displayDiff} (예상정산: ${Math.floor(totalEstimatedReturn).toLocaleString()}원)`;
         profitPercentEl.innerText = `${percent.toFixed(2)}%`;
 
         // 색상 적용: 양수(레드), 음수(블루), 0(기본)
-        if (diff > 0) {
+        if (diff > 1) { // 소수점 오차 고려하여 1원 초과 시
             profitAmountEl.style.color = 'var(--danger)';
             profitPercentEl.style.color = 'var(--danger)';
-        } else if (diff < 0) {
-            profitAmountEl.style.color = 'var(--target)'; // CSS 변수의 블루 색상
+        } else if (diff < -1) {
+            profitAmountEl.style.color = 'var(--target)';
             profitPercentEl.style.color = 'var(--target)';
         } else {
             profitAmountEl.style.color = 'var(--text-dark)';
