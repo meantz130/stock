@@ -196,7 +196,7 @@
     const firebaseConfig = {
         apiKey: "AIzaSyDIgzZzkJCNl_N2CTJpQzXYrxmymBqlq4A",
         authDomain: "stock-81b2d.firebaseapp.com",
-        databaseURL: "https://stock-81b2d-default-rtdb.asia-southeast1.firebasedatabase.app", 
+        databaseURL: "https://stock-81b2d-default-rtdb.asia-southeast1.firebasedatabase.app/", 
         projectId: "stock-81b2d",
         storageBucket: "stock-81b2d.firebasestorage.app",
         messagingSenderId: "180064792232",
@@ -239,24 +239,35 @@
     });
 
     function initApp() {
+        // 1. 종목 데이터 로드
         db.ref('stocks').on('value', (snap) => {
             const data = snap.val();
             items = data ? Object.keys(data).map(k => ({id:k, ...data[k]})) : [];
             renderList();
             calculateTotal();
             if(currentId) syncEditor();
-        });
+        }, (error) => console.error("Stocks 로드 에러:", error));
+        // 2. 예수금 로드
         db.ref('user_cash').on('value', (snap) => {
             userCash = Number(snap.val()) || 0;
-            document.getElementById('cash-input').value = userCash || "";
+            const cashInput = document.getElementById('cash-input');
+            if(cashInput) cashInput.value = userCash || "";
             calculateTotal();
         });
+        3. 수익 기록 로드 (에러 방어막 강화)
         db.ref('realized_profits').on('value', (snap) => {
-            const data = snap.val();
-            realizedProfits = data ? Object.keys(data).map(k => ({id:k, ...data[k]})).reverse() : [];
-            renderRealizedList();
+            try {
+                const data = snap.val();
+                // 데이터가 있으면 배열로 만들고 뒤집기, 없으면 빈 배열
+                realizedProfits = data ? Object.keys(data).map(k => ({id:k, ...data[k]})).reverse() : [];
+                renderRealizedList();
+            } catch (e) {
+                console.error("수익 기록 처리 중 에러:", e);
+                realizedProfits = [];
+            }
         });
     }
+
 
     function toggleMenu() {
         document.getElementById('sidebar').classList.toggle('open');
