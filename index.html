@@ -129,6 +129,11 @@
         .profit-pos { color: var(--danger); }
         .profit-neg { color: var(--target); }
         .editor-container { max-width: 800px; margin: 0 auto; display: none; animation: fadeIn 0.3s ease; }
+
+        /* 페이지네이션 스타일 추가 */
+        .pagination-ctrl { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; font-size: 0.85rem; }
+        .pagination-ctrl button { background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .pagination-ctrl button:disabled { opacity: 0.4; cursor: default; }
     </style>
 </head>
 <body>
@@ -296,7 +301,6 @@
             if(currentId) syncEditor();
         });
         db.ref('realized_profits').on('value', (snap) => { renderRealized(snap.val()); });
-        // 예수금 데이터 로드
         db.ref('user_cash').on('value', (snap) => {
             userCash = Number(snap.val()) || 0;
             document.getElementById('cash-input').value = userCash || "";
@@ -349,7 +353,6 @@
             stockTotal += (Number(item.holdCount) || 0) * (history.length > 0 ? history[0].price : (Number(item.holdAvg) || 0));
         });
         document.getElementById('main-total-asset').innerText = stockTotal.toLocaleString() + "원";
-        // 총 자산 = 주식 평가액 + 예수금
         document.getElementById('total-asset-value').innerText = (stockTotal + userCash).toLocaleString() + "원";
     }
 
@@ -379,7 +382,18 @@
         const latestPrice = historyArr.length > 0 ? historyArr[0].price : 0;
         const count = Number(item.holdCount) || 0, avg = Number(item.holdAvg) || 0;
         
-        document.getElementById('item-asset-sum').innerText = (count * (latestPrice || avg)).toLocaleString();
+        // 수익률 및 수익금 계산
+        const evalAmt = count * (latestPrice || avg);
+        const buyAmt = count * avg;
+        const diff = evalAmt - buyAmt;
+        const percent = buyAmt > 0 ? (diff / buyAmt) * 100 : 0;
+
+        document.getElementById('item-asset-sum').innerText = evalAmt.toLocaleString();
+        document.getElementById('profit-amount').innerText = `${diff >= 0 ? '+' : ''}${diff.toLocaleString()}원`;
+        document.getElementById('profit-amount').style.color = diff >= 0 ? 'var(--danger)' : 'var(--target)';
+        document.getElementById('profit-percent').innerText = `${percent >= 0 ? '+' : ''}${percent.toFixed(2)}%`;
+        document.getElementById('profit-percent').style.color = percent >= 0 ? 'var(--danger)' : 'var(--target)';
+
         const fields = {'item-title': item.title, 'hold-count': item.holdCount, 'hold-avg': item.holdAvg, 't1': item.t1, 't2': item.t2, 't3': item.t3, 'field-memo': item.memo};
         Object.entries(fields).forEach(([id, val]) => { if(document.activeElement.id !== id) document.getElementById(id).value = val || ""; });
         renderHistory(historyArr);
@@ -387,21 +401,52 @@
 
     function renderHistory(historyArr) {
         const hList = document.getElementById('history-list');
+        const pager = document.getElementById('history-pager');
         hList.innerHTML = '';
-        historyArr.slice((historyPage-1)*historyLimit, historyPage*historyLimit).forEach(item => {
+        
+        // 페이징 처리
+        const totalPages = Math.ceil(historyArr.length / historyLimit) || 1;
+        if(historyPage > totalPages) historyPage = totalPages;
+
+        const start = (historyPage - 1) * historyLimit;
+        const end = start + historyLimit;
+        const pagedItems = historyArr.slice(start, end);
+
+        pagedItems.forEach(item => {
             const div = document.createElement('div'); div.className = 'history-item';
-            div.innerHTML = `<span>${item.date}</span> <b>${item.price.toLocaleString()}원</b> <span onclick="deleteHistory('${item.k}')">×</span>`;
+            div.innerHTML = `<span>${item.date}</span> <b style="flex:1; text-align:right; margin-right:15px;">${item.price.toLocaleString()}원</b> <span style="cursor:pointer; color:#ccc;" onclick="deleteHistory('${item.k}')">×</span>`;
             hList.appendChild(div);
         });
+
+        // 페이징 컨트롤러
+        pager.innerHTML = `
+            <button onclick="changeHistoryPage(-1)" ${historyPage === 1 ? 'disabled' : ''}>이전</button>
+            <span>${historyPage} / ${totalPages}</span>
+            <button onclick="changeHistoryPage(1)" ${historyPage === totalPages ? 'disabled' : ''}>다음</button>
+        `;
     }
+
+    function changeHistoryPage(dir) {
+        historyPage += dir;
+        syncEditor();
+    }
+
     function updateField(f, v) { if(currentId) db.ref(`stocks/${currentId}`).update({ [f]: v }); }
-    function deleteHistory(key) { if(confirm("삭제?")) db.ref(`stocks/${currentId}/manualHistory/${key}`).remove(); }
-    function deleteStock() { if(confirm("삭제?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
+    function deleteHistory(key) { if(confirm("삭제하시겠습니까?")) db.ref(`stocks/${currentId}/manualHistory/${key}`).remove(); }
+    function deleteStock() { if(confirm("종목을 삭제하시겠습니까?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
     function addNewItem() { const ref = db.ref('stocks').push(); ref.set({ title: "새 종목", holdCount: 0, holdAvg: 0 }); }
+    
     function handleManualSave(e) {
         if(e.key === 'Enter' && e.target.value && currentId) {
-            db.ref(`stocks/${currentId}/manualHistory`).push({ date: `${new Date().getMonth()+1}/${new Date().getDate()}`, price: Number(e.target.value), ts: Date.now() });
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+            db.ref(`stocks/${currentId}/manualHistory`).push({ 
+                date: dateStr, 
+                price: Number(e.target.value), 
+                ts: Date.now() 
+            });
             e.target.value = '';
+            historyPage = 1; // 새 입력 시 첫 페이지로 이동
         }
     }
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
