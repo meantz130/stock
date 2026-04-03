@@ -60,7 +60,7 @@
         .total-asset-box span { color: var(--text-light); font-size: 0.7rem; display: block; margin-bottom: 2px; }
         .total-asset-box div { color: var(--white); font-weight: 800; font-size: 1.1rem; }
 
-        #item-list { flex: 1; overflow-y: auto; }
+        #item-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #374151 transparent; }
         #item-list::-webkit-scrollbar { width: 4px; }
         #item-list::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
 
@@ -71,52 +71,67 @@
         .list-item:hover { background: #252830; }
         .list-item.selected-active { background: var(--active-item) !important; border-left-color: var(--accent); }
         .list-item strong { display: block; margin-bottom: 3px; font-size: 0.95rem; }
+        .list-item .info-row { display: flex; justify-content: space-between; align-items: center; }
         .list-item small { color: var(--text-light); font-size: 0.7rem; }
 
-        .sidebar-footer { padding: 12px; background: #1a1c23; border-top: 1px solid #2d3139; }
+        .sidebar-footer { padding: 12px; background: #1a1c23; border-top: 1px solid #2d3139; display: flex; flex-direction: column; gap: 8px; }
         .logout-btn {
             width: 100%; padding: 10px 0; background: transparent; 
             color: var(--danger); border: 1px solid var(--danger);
             border-radius: 8px; font-size: 0.85rem; font-weight: 600;
-            cursor: pointer; transition: var(--transition);
+            cursor: pointer; transition: var(--transition); box-sizing: border-box;
         }
 
         #main-content { flex: 1; padding: 15px; overflow-y: auto; width: 100%; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .top-bar-left { display: flex; align-items: center; gap: 12px; }
+        .menu-btn { display: none; background: var(--sidebar-bg); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        @media (max-width: 768px) { .menu-btn { display: block; } }
+
         .home-btn {
             background: var(--white); border: 1px solid #e2e8f0; padding: 8px 15px;
             border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer;
             display: flex; align-items: center; gap: 6px; color: var(--text-dark);
+            transition: var(--transition);
         }
 
-        #main-dashboard { max-width: 800px; margin: 0 auto; }
+        #main-dashboard { max-width: 800px; margin: 0 auto; display: block; animation: fadeIn 0.3s ease; }
         .summary-card { 
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
             color: white; padding: 25px; border-radius: 20px; margin-bottom: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
         .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 15px; }
         .summary-item label { font-size: 0.75rem; opacity: 0.7; display: block; margin-bottom: 5px; }
         .summary-item div { font-size: 1.2rem; font-weight: 800; }
+
+        .realized-input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .realized-input-group input { flex: 1; background: #f1f5f9; border-radius: 8px; padding: 12px; font-weight: 400; border: 1px solid #e2e8f0; }
+        .realized-input-group button { background: var(--sidebar-bg); color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .card { background: var(--white); padding: 18px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 12px; border: 1px solid #f0f0f0; }
         .price-box { border: 1px solid #f1f5f9; padding: 10px 14px; border-radius: 10px; background: #f8fafc; }
         .price-box label { font-size: 0.7rem; font-weight: bold; color: var(--text-light); margin-bottom: 3px; display: block; }
         
         input, textarea { width: 100%; border: none; padding: 4px 0; font-size: 0.95rem; outline: none; background: transparent; color: var(--text-dark); font-weight: 600; }
+        textarea { font-weight: 400; line-height: 1.5; font-size: 0.9rem; }
         
         .history-item { background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; }
-        .editor-container { max-width: 800px; margin: 0 auto; display: none; }
+        .editor-container { max-width: 800px; margin: 0 auto; display: none; animation: fadeIn 0.3s ease; }
         .pagination-ctrl { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; font-size: 0.85rem; }
-        .pagination-ctrl button { background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .pagination-ctrl button { background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .pagination-ctrl button:disabled { opacity: 0.4; cursor: default; }
     </style>
 </head>
 <body>
 
-<div id="loading-overlay">로딩중...</div>
+<div id="loading-overlay">로딩중입니다...</div>
 <div id="login-overlay" style="display:none;">
     <div class="login-card">
-        <h2>STOCK HUB</h2>
-        <input type="email" id="login-email" placeholder="이메일">
+        <h2 style="color:var(--text-dark); margin-bottom:20px;">STOCK HUB</h2>
+        <input type="email" id="login-email" placeholder="아이디 (이메일)">
         <input type="password" id="login-pw" placeholder="비밀번호">
         <button onclick="handleLogin()">로그인</button>
     </div>
@@ -129,7 +144,7 @@
     </div>
     <div class="user-welcome" id="user-display-name">환영합니다</div>
     <div class="total-asset-box">
-        <span>총 자산</span>
+        <span>총 자산 (평가액+예수금)</span>
         <div id="total-asset-value">0원</div>
     </div>
     <div id="item-list"></div>
@@ -137,64 +152,83 @@
         <button onclick="handleLogout()" class="logout-btn">로그아웃</button>
     </div>
 </div>
+<div class="mobile-overlay" onclick="toggleMenu()"></div>
 
 <div id="main-content">
     <div class="top-bar">
-        <h2 id="view-title" style="margin:0; font-size:1.2rem; font-weight:900;">Market Intelligence</h2>
-        <button class="home-btn" onclick="goHome()">🏠 홈으로</button>
+        <div class="top-bar-left">
+            <button class="menu-btn" onclick="toggleMenu()">☰ 메뉴</button>
+            <h2 id="view-title" style="margin:0; font-size:1.2rem; font-weight:900; color:var(--text-dark);">Market Intelligence</h2>
+        </div>
+        <button class="home-btn" onclick="goHome()">🏠 메인 대시보드</button>
     </div>
 
     <div id="main-dashboard">
         <div class="summary-card">
+            <h3 style="margin:0; font-size:1rem; opacity:0.8;">Asset Summary</h3>
             <div class="summary-grid">
-                <div class="summary-item"><label>총 실현 손익</label><div id="main-total-realized">0원</div></div>
-                <div class="summary-item"><label>총 평가 자산</label><div id="main-total-asset">0원</div></div>
-                <div class="summary-item"><label>예수금</label><div id="main-display-cash">0원</div></div>
+                <div class="summary-item">
+                    <label>총 실현 손익</label>
+                    <div id="main-total-realized">0원</div>
+                </div>
+                <div class="summary-item">
+                    <label>총 평가 자산</label>
+                    <div id="main-total-asset">0원</div>
+                </div>
+                <div class="summary-item">
+                    <label>예수금</label>
+                    <div id="main-display-cash">0원</div>
+                </div>
             </div>
         </div>
         <div class="card">
-            <label style="font-size:0.8rem; font-weight:800; display:block; margin-bottom:10px;">💰 예수금 관리</label>
-            <input type="number" id="cash-input" placeholder="현금 입력" oninput="updateCash(this.value)" style="background:#f1f5f9; padding:10px; border-radius:8px;">
+            <label style="font-size:0.8rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">💰 예수금(현금) 관리</label>
+            <div class="realized-input-group">
+                <input type="number" id="cash-input" placeholder="현재 보유 중인 현금 입력" oninput="updateCash(this.value)">
+            </div>
+        </div>
+        <div class="card">
+            <label style="font-size:0.8rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">📝 수익실현(매도) 기록</label>
+            <div class="realized-input-group">
+                <input type="text" id="realized-name" placeholder="종목명">
+                <input type="number" id="realized-val" placeholder="수익금(원)">
+                <button onclick="addRealizedRecord()">기록</button>
+            </div>
+            <div id="realized-history-container" style="margin-top:15px;"></div>
         </div>
     </div>
 
     <div class="editor-container" id="editor">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <input type="text" id="item-title" placeholder="종목명" oninput="updateField('title', this.value)" style="font-size:1.5rem; font-weight:800;">
-            <button onclick="deleteStock()" style="color:var(--danger); background:#fee2e2; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold;">삭제</button>
+        <div class="editor-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; gap:15px;">
+            <input type="text" id="item-title" placeholder="종목명" oninput="updateField('title', this.value)" style="flex:1; font-size:1.5rem; font-weight:800; border:none; color:var(--text-dark);">
+            <button style="color:var(--danger); background:#fee2e2; border:none; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem;" onclick="deleteStock()">삭제</button>
         </div>
-
         <div class="card">
-            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">💼 보유 현황</label>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div class="price-box"><label>수량</label><input type="number" id="hold-count" oninput="updateField('holdCount', this.value)"></div>
-                <div class="price-box"><label>평단가</label><input type="number" id="hold-avg" oninput="updateField('holdAvg', this.value)"></div>
+            <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">💼 실시간 포지션</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:15px;">
+                <div class="price-box"><label>보유 수량</label><input type="number" id="hold-count" oninput="updateField('holdCount', this.value)"></div>
+                <div class="price-box"><label>평균 단가</label><input type="number" id="hold-avg" oninput="updateField('holdAvg', this.value)"></div>
             </div>
-            <div style="margin-top:15px; text-align:right;">
-                <span id="profit-percent" style="font-size:1.2rem; font-weight:800;">0.00%</span>
-                <div id="profit-amount" style="font-size:0.9rem; font-weight:700;">0원</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f0f0f0; padding-top:12px;">
+                <div style="font-size:0.8rem; color:var(--text-light);">수익 현황</div>
+                <div style="text-align:right; display:flex; align-items:center; gap:10px;">
+                    <div id="profit-amount" style="font-size:0.85rem; font-weight:700;">0원</div>
+                    <div id="profit-percent" style="font-size:1.1rem; font-weight:800;">0.00%</div>
+                </div>
             </div>
-        </div>
-
-        <div class="card">
-            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">🎯 희망 진입 전략</label>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-                <div class="price-box"><label>1차 희망가</label><input type="number" id="target-1" placeholder="입력" oninput="updateField('target1', this.value)"></div>
-                <div class="price-box"><label>2차 희망가</label><input type="number" id="target-2" placeholder="입력" oninput="updateField('target2', this.value)"></div>
-                <div class="price-box"><label>3차 희망가</label><input type="number" id="target-3" placeholder="입력" oninput="updateField('target3', this.value)"></div>
+            <div style="margin-top:10px; text-align:right; font-weight:800; font-size:0.9rem; color: var(--text-dark);">
+                평가액: <span id="item-asset-sum" style="color:var(--accent);">0</span>원
             </div>
         </div>
-
         <div class="card">
-            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">📅 종가 히스토리</label>
-            <input type="number" id="manual-close-input" placeholder="금액 입력 + Enter" onkeydown="handleManualSave(event)" style="border-bottom:2px solid #f1f5f9; margin-bottom:10px;">
+            <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:block;">📅 종가 히스토리</label>
+            <input type="number" id="manual-close-input" style="border-bottom:2px solid #f1f5f9; margin-bottom:10px; font-size:0.9rem;" placeholder="금액 입력 + Enter" onkeydown="handleManualSave(event)">
             <div id="history-list"></div>
             <div class="pagination-ctrl" id="history-pager"></div>
         </div>
-
         <div class="card">
-            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:10px;">📝 메모</label>
-            <textarea id="field-memo" rows="4" oninput="updateField('memo', this.value)" style="font-weight:400;"></textarea>
+            <label style="font-size:0.75rem; font-weight:800; color:var(--text-dark); margin-bottom:10px; display:block;">📝 메모</label>
+            <textarea id="field-memo" rows="4" oninput="updateField('memo', this.value)"></textarea>
         </div>
     </div>
 </div>
@@ -210,15 +244,15 @@
     const db = firebase.database();
     const auth = firebase.auth();
 
-    let items = [], currentId = null, userCash = 0, historyPage = 1;
-    const historyLimit = 10;
+    let items = [], currentId = null, lastClickedId = null, userCash = 0;
+    let historyPage = 1; const historyLimit = 10;
 
     function handleLogin() {
         const email = document.getElementById('login-email').value;
         const pw = document.getElementById('login-pw').value;
         auth.signInWithEmailAndPassword(email, pw);
     }
-    function handleLogout() { auth.signOut().then(() => location.reload()); }
+    function handleLogout() { if(confirm("로그아웃 하시겠습니까?")) auth.signOut().then(() => location.reload()); }
 
     auth.onAuthStateChanged((user) => {
         document.getElementById('loading-overlay').style.display = 'none';
@@ -234,26 +268,62 @@
         db.ref('stocks').on('value', (snap) => {
             const data = snap.val();
             items = data ? Object.keys(data).map(k => ({id:k, ...data[k]})) : [];
+            calculateTotalAssets();
             renderList();
-            calculateTotal();
             if(currentId) syncEditor();
         });
+        db.ref('realized_profits').on('value', (snap) => { renderRealized(snap.val()); });
         db.ref('user_cash').on('value', (snap) => {
             userCash = Number(snap.val()) || 0;
             document.getElementById('cash-input').value = userCash || "";
-            calculateTotal();
+            document.getElementById('main-display-cash').innerText = userCash.toLocaleString() + "원";
+            calculateTotalAssets();
         });
     }
 
-    function calculateTotal() {
+    function updateCash(val) { db.ref('user_cash').set(Number(val)); }
+    function goHome() {
+        currentId = null; lastClickedId = null;
+        document.getElementById('editor').style.display = 'none';
+        document.getElementById('main-dashboard').style.display = 'block';
+        document.getElementById('view-title').innerText = "Market Intelligence";
+        renderList();
+    }
+
+    function addRealizedRecord() {
+        const name = document.getElementById('realized-name').value;
+        const val = document.getElementById('realized-val').value;
+        if(!name || !val) return;
+        db.ref('realized_profits').push({ name, amount: Number(val), date: new Date().toLocaleDateString(), ts: Date.now() });
+        document.getElementById('realized-name').value = '';
+        document.getElementById('realized-val').value = '';
+    }
+
+    function renderRealized(data) {
+        const container = document.getElementById('realized-history-container');
+        const displayTotal = document.getElementById('main-total-realized');
+        container.innerHTML = '';
+        let total = 0;
+        if(data) {
+            Object.entries(data).reverse().forEach(([key, val]) => {
+                total += val.amount;
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `<div><strong>${val.name}</strong> <small>${val.date}</small></div><div style="font-weight:bold; color:${val.amount >=0 ? 'var(--danger)' : 'var(--target)'}">${val.amount >=0 ? '+' : ''}${val.amount.toLocaleString()}원 <span style="cursor:pointer; color:#ccc;" onclick="deleteRealized('${key}')">×</span></div>`;
+                container.appendChild(div);
+            });
+        }
+        displayTotal.innerText = total.toLocaleString() + "원";
+    }
+    function deleteRealized(key) { if(confirm("삭제?")) db.ref(`realized_profits/${key}`).remove(); }
+
+    function calculateTotalAssets() {
         let stockTotal = 0;
         items.forEach(item => {
             const history = item.manualHistory ? Object.values(item.manualHistory).sort((a,b) => b.ts - a.ts) : [];
-            const price = history.length > 0 ? history[0].price : (Number(item.holdAvg) || 0);
-            stockTotal += (Number(item.holdCount) || 0) * price;
+            stockTotal += (Number(item.holdCount) || 0) * (history.length > 0 ? history[0].price : (Number(item.holdAvg) || 0));
         });
         document.getElementById('main-total-asset').innerText = stockTotal.toLocaleString() + "원";
-        document.getElementById('main-display-cash').innerText = userCash.toLocaleString() + "원";
         document.getElementById('total-asset-value').innerText = (stockTotal + userCash).toLocaleString() + "원";
     }
 
@@ -262,15 +332,16 @@
         container.innerHTML = '';
         items.forEach(item => {
             const div = document.createElement('div');
-            div.className = `list-item ${currentId === item.id ? 'selected-active' : ''}`;
+            const history = item.manualHistory ? Object.values(item.manualHistory).sort((a,b) => b.ts - a.ts) : [];
+            const evalAmt = (Number(item.holdCount) || 0) * (history.length > 0 ? history[0].price : (Number(item.holdAvg) || 0));
+            div.className = `list-item ${lastClickedId === item.id ? 'selected-active' : ''}`;
             div.onclick = () => { 
-                currentId = item.id; historyPage = 1;
+                currentId = item.id; lastClickedId = item.id; historyPage = 1; 
                 document.getElementById('main-dashboard').style.display = 'none';
                 document.getElementById('editor').style.display = 'block';
-                syncEditor();
-                renderList();
+                syncEditor(); 
             };
-            div.innerHTML = `<strong>${item.title || "새 종목"}</strong>`;
+            div.innerHTML = `<strong>${item.title || "새 종목"}</strong><div class="info-row"><small>평가: ${evalAmt.toLocaleString()}원</small></div>`;
             container.appendChild(div);
         });
     }
@@ -278,7 +349,6 @@
     function syncEditor() {
         const item = items.find(i => i.id === currentId);
         if(!item) return;
-
         const historyArr = item.manualHistory ? Object.entries(item.manualHistory).map(([k, v]) => ({k, ...v})).sort((a,b) => b.ts - a.ts) : [];
         const latestPrice = historyArr.length > 0 ? historyArr[0].price : 0;
         const count = Number(item.holdCount) || 0, avg = Number(item.holdAvg) || 0;
@@ -288,17 +358,14 @@
         const diff = evalAmt - buyAmt;
         const percent = buyAmt > 0 ? (diff / buyAmt) * 100 : 0;
 
-        document.getElementById('profit-amount').innerText = `${diff.toLocaleString()}원`;
-        document.getElementById('profit-percent').innerText = `${percent.toFixed(2)}%`;
+        document.getElementById('item-asset-sum').innerText = evalAmt.toLocaleString();
+        document.getElementById('profit-amount').innerText = `${diff >= 0 ? '+' : ''}${diff.toLocaleString()}원`;
+        document.getElementById('profit-amount').style.color = diff >= 0 ? 'var(--danger)' : 'var(--target)';
+        document.getElementById('profit-percent').innerText = `${percent >= 0 ? '+' : ''}${percent.toFixed(2)}%`;
         document.getElementById('profit-percent').style.color = percent >= 0 ? 'var(--danger)' : 'var(--target)';
 
-        const fields = {
-            'item-title': item.title, 'hold-count': item.holdCount, 'hold-avg': item.holdAvg, 'field-memo': item.memo,
-            'target-1': item.target1, 'target-2': item.target2, 'target-3': item.target3
-        };
-        Object.entries(fields).forEach(([id, val]) => { 
-            if(document.activeElement.id !== id) document.getElementById(id).value = val || ""; 
-        });
+        const fields = {'item-title': item.title, 'hold-count': item.holdCount, 'hold-avg': item.holdAvg, 'field-memo': item.memo};
+        Object.entries(fields).forEach(([id, val]) => { if(document.activeElement.id !== id) document.getElementById(id).value = val || ""; });
         renderHistory(historyArr);
     }
 
@@ -306,45 +373,47 @@
         const hList = document.getElementById('history-list');
         const pager = document.getElementById('history-pager');
         hList.innerHTML = '';
+        
         const totalPages = Math.ceil(historyArr.length / historyLimit) || 1;
-        const paged = historyArr.slice((historyPage-1)*historyLimit, historyPage*historyLimit);
+        if(historyPage > totalPages) historyPage = totalPages;
 
-        paged.forEach(h => {
-            const div = document.createElement('div');
-            div.className = 'history-item';
-            div.innerHTML = `<span>${h.date}</span> <b>${h.price.toLocaleString()}원</b> <span style="cursor:pointer;opacity:0.3" onclick="deleteHistory('${h.k}')">×</span>`;
+        const start = (historyPage - 1) * historyLimit;
+        const pagedItems = historyArr.slice(start, start + historyLimit);
+
+        pagedItems.forEach(item => {
+            const div = document.createElement('div'); div.className = 'history-item';
+            div.innerHTML = `<span>${item.date}</span> <b style="flex:1; text-align:right; margin-right:15px;">${item.price.toLocaleString()}원</b> <span style="cursor:pointer; color:#ccc;" onclick="deleteHistory('${item.k}')">×</span>`;
             hList.appendChild(div);
         });
 
         pager.innerHTML = `
-            <button onclick="changePage(-1)" ${historyPage === 1 ? 'disabled' : ''}>이전</button>
+            <button onclick="changeHistoryPage(-1)" ${historyPage === 1 ? 'disabled' : ''}>이전</button>
             <span>${historyPage} / ${totalPages}</span>
-            <button onclick="changePage(1)" ${historyPage === totalPages ? 'disabled' : ''}>다음</button>
+            <button onclick="changeHistoryPage(1)" ${historyPage === totalPages ? 'disabled' : ''}>다음</button>
         `;
     }
 
+    function changeHistoryPage(dir) { historyPage += dir; syncEditor(); }
+    function updateField(f, v) { if(currentId) db.ref(`stocks/${currentId}`).update({ [f]: v }); }
+    function deleteHistory(key) { if(confirm("삭제?")) db.ref(`stocks/${currentId}/manualHistory/${key}`).remove(); }
+    function deleteStock() { if(confirm("삭제?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
+    function addNewItem() { const ref = db.ref('stocks').push(); ref.set({ title: "새 종목", holdCount: 0, holdAvg: 0 }); }
+    
     function handleManualSave(e) {
         if(e.key === 'Enter' && e.target.value && currentId) {
             const now = new Date();
-            const dateStr = `${String(now.getFullYear()).slice(-2)}.${now.getMonth()+1}.${now.getDate()}`;
-            db.ref(`stocks/${currentId}/manualHistory`).push({ date: dateStr, price: Number(e.target.value), ts: Date.now() });
+            // 요청하신 형식: 26.4.3 (YY.M.D)
+            const dateStr = `${String(now.getFullYear()).slice(-2)}.${now.getMonth() + 1}.${now.getDate()}`;
+            db.ref(`stocks/${currentId}/manualHistory`).push({ 
+                date: dateStr, 
+                price: Number(e.target.value), 
+                ts: Date.now() 
+            });
             e.target.value = '';
-            historyPage = 1;
+            historyPage = 1; 
         }
     }
-
-    function updateField(f, v) { if(currentId) db.ref(`stocks/${currentId}`).update({ [f]: v }); }
-    function updateCash(v) { db.ref('user_cash').set(Number(v)); }
-    function changePage(dir) { historyPage += dir; syncEditor(); }
-    function deleteHistory(k) { if(confirm("삭제?")) db.ref(`stocks/${currentId}/manualHistory/${k}`).remove(); }
-    function deleteStock() { if(confirm("종목 삭제?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
-    function addNewItem() { db.ref('stocks').push({ title: "새 종목", holdCount: 0, holdAvg: 0 }); }
-    function goHome() { 
-        currentId = null; 
-        document.getElementById('editor').style.display = 'none'; 
-        document.getElementById('main-dashboard').style.display = 'block';
-        renderList();
-    }
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
 </script>
 </body>
 </html>
