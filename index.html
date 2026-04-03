@@ -342,7 +342,7 @@
             div.className = 'history-item';
             div.innerHTML = `
                 <span>${p.name || '이름 없음'}</span>
-                <b style="color:${color}">${prefix}${priceValue.toLocaleString()}원</b>
+                <b style="color:${color}">${prefix}${(p.price || 0).toLocaleString()}원</b>
                 <span onclick="deleteRealized('${p.id}')" style="cursor:pointer; opacity:0.3; padding-left:10px;">×</span>
             `;
             container.appendChild(div);
