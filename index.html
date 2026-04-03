@@ -157,6 +157,17 @@
             <button onclick="deleteStock()" style="color:var(--danger); background:#fee2e2; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold;">삭제</button>
         </div>
 
+    <div id="editor" style="display:none;">
+        <div style="display:flex; flex-direction:column; margin-bottom:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <input type="text" id="item-title" oninput="updateField('title', this.value)" style="font-size:1.5rem; font-weight:800; width:70%;" placeholder="종목명">
+                <button onclick="deleteStock()" style="color:var(--danger); background:#fee2e2; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold;">삭제</button>
+             </div>
+             <input type="text" id="item-description" oninput="updateField('description', this.value)" 
+                 style="font-size:0.9rem; font-weight:400; color:var(--text-light); margin-top:5px; border-bottom:1px solid #eee;"
+                  placeholder="이 주식에 대한 간단한 설명을 입력하세요 (예: 반도체 대장주, 배당주 등)">
+         </div>
+
         <div class="card">
             <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">💼 보유 현황</label>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -340,6 +351,7 @@
         else if (diff < -1) { profitAmountEl.style.color = 'var(--target)'; profitPercentEl.style.color = 'var(--target)'; }
         else { profitAmountEl.style.color = 'var(--text-dark)'; profitPercentEl.style.color = 'var(--text-dark)'; }
         document.getElementById('item-title').value = item.title || "";
+        document.getElementById('item-description').value = item.description || ""; 
         document.getElementById('hold-count').value = item.holdCount || "";
         document.getElementById('hold-avg').value = item.holdAvg || "";
         document.getElementById('target-1').value = item.target1 || "";
