@@ -252,15 +252,24 @@
     }
 
     function calculateTotal() {
-        let stockTotal = 0;
+        let totalStockEvaluation = 0; // 종가 기준 종목 총 평가액
         items.forEach(item => {
+            const count = Number(item.holdCount) || 0;
             const history = item.manualHistory ? Object.values(item.manualHistory).sort((a,b) => b.ts - a.ts) : [];
-            const price = history.length > 0 ? history[0].price : (Number(item.holdAvg) || 0);
-            stockTotal += (Number(item.holdCount) || 0) * price;
+
+            // 최신 종가가 있으면 종가 사용, 없으면 평단가 사용 (평가액 0원 방지)
+            const latestPrice = history.length > 0 ? Number(history[0].price) : (Number(item.holdAvg) || 0);
+            
+            totalStockEvaluation += count * latestPrice;
         });
-        document.getElementById('main-total-stock').innerText = stockTotal.toLocaleString() + "원";
+
+        // 메인 화면 표시 업데이트
+        document.getElementById('main-total-stock').innerText = totalStockEvaluation.toLocaleString() + "원";
         document.getElementById('main-display-cash').innerText = userCash.toLocaleString() + "원";
-        document.getElementById('total-asset-value').innerText = (stockTotal + userCash).toLocaleString() + "원";
+
+        // 총 자산 = 종목 평가 합계 + 예수금
+        const totalAsset = totalStockEvaluation + userCash;
+        document.getElementById('total-asset-value').innerText = totalAsset.toLocaleString() + "원";
     }
 
     function renderList() {
@@ -321,20 +330,34 @@
     function syncEditor() {
         const item = items.find(i => i.id === currentId);
         if(!item) return;
-        
+
         const historyArr = item.manualHistory ? Object.entries(item.manualHistory).map(([k, v]) => ({k, ...v})).sort((a,b) => b.ts - a.ts) : [];
-        const latestPrice = historyArr.length > 0 ? historyArr[0].price : 0;
-        const count = Number(item.holdCount) || 0, avg = Number(item.holdAvg) || 0;
-        
-        const evalAmt = count * (latestPrice || avg);
-        const buyAmt = count * avg;
-        const diff = evalAmt - buyAmt;
-        const percent = buyAmt > 0 ? (diff / buyAmt) * 100 : 0;
+        const count = Number(item.holdCount) || 0;
+        const avg = Number(item.holdAvg) || 0;
 
-        document.getElementById('profit-amount').innerText = `${diff.toLocaleString()}원`;
-        document.getElementById('profit-percent').innerText = `${percent.toFixed(2)}%`;
-        document.getElementById('profit-percent').style.color = percent >= 0 ? 'var(--danger)' : 'var(--target)';
+        // 최신 종가 (기록이 없으면 0)
+        const latestPrice = historyArr.length > 0 ? Number(historyArr[0].price) : 0;
 
+        // 매수 총액 = 수량 * 평단가
+        const buyTotal = count * avg;
+        // 현재 평가 총액 = 수량 * 최신 종가
+        const evalTotal = count * latestPrice;
+        // 수익금 = 평가 총액 - 매수 총액
+        const diff = evalTotal - buyTotal;
+        // 수익률 = (수익금 / 매수 총액) * 100
+        const percent = buyTotal > 0 ? (diff / buyTotal) * 100 : 0;
+
+        // 화면 표시 (수익금 및 퍼센트)
+        const profitAmountEl = document.getElementById('profit-amount');
+        const profitPercentEl = document.getElementById('profit-percent');
+
+        profitAmountEl.innerText = `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원 (평가: ${evalTotal.toLocaleString()}원)`;
+        profitPercentEl.innerText = `${percent.toFixed(2)}%`;
+
+        // 색상 변경 (양수 레드, 음수 블루)
+        profitPercentEl.style.color = percent > 0 ? 'var(--danger)' : (percent < 0 ? 'var(--target)' : 'var(--text-dark)');
+
+        // 기존 입력 필드 값 유지
         document.getElementById('item-title').value = item.title || "";
         document.getElementById('hold-count').value = item.holdCount || "";
         document.getElementById('hold-avg').value = item.holdAvg || "";
