@@ -294,7 +294,21 @@
             };
             const avg = Number(item.holdAvg || 0).toLocaleString();
             const t3 = item.target3 ? Number(item.target3).toLocaleString() : '-';
-            div.innerHTML = `<div style="font-weight:bold;">${item.title || "새 종목"}</div><div class="item-row"><div class="item-info-left">평단: ${avg}</div><div class="item-info-right">희망가: ${t3}</div></div>`;
+            // 보유 수량 가져오기 (값이 없으면 0으로 표시)
+            const count = item.holdCount || 0;
+            // 주식 이름 옆에 (수량) 추가
+            // 주식 이름 옆에 (수량) 추가
+            div.innerHTML = `
+                <div style="font-weight:bold;">
+                    ${item.title || "새 종목"} 
+                    <span style="font-size:0.75rem; color:var(--text-light); font-weight:normal; margin-left:4px;">
+                        (${count})
+                    </span>
+                </div>
+                <div class="item-row">
+                    <div class="item-info-left">평단: ${avg}</div>
+                    <div class="item-info-right">희망가: ${t3}</div>
+                </div>`;
             container.appendChild(div);
         });
     }
