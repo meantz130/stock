@@ -457,9 +457,9 @@
         const yearSelect = document.getElementById('cal-year');
         const monthSelect = document.getElementById('cal-month');
         
-        // 최초 실행 시 셀렉트 박스 옵션 생성 (2024~2030)
+        // 최초 실행 시 셀렉트 박스 옵션 생성 (2024~2050)
         if (yearSelect.innerHTML === "") {
-            for (let y = 2024; y <= 2030; y++) {
+            for (let y = 2024; y <= 2050; y++) {
             const opt = document.createElement('option');
             opt.value = y; opt.innerText = y + "년";
             yearSelect.appendChild(opt);
