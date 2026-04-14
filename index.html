@@ -188,7 +188,6 @@
                 <div id="daily-list-display" style="margin-top: 10px; max-height: 150px; overflow-y: auto;"></div>
             </div>
         </div>          
-    </div>
 
     <div id="editor" style="display:none;">
         <div style="display:flex; flex-direction:column; margin-bottom:15px;">
@@ -447,113 +446,113 @@
         document.getElementById('realized-price').value = '';
     }
     // 스크립트 가장 하단부
-let selectedDateStr = "";
+    let selectedDateStr = "";
 
-function initCalendar() {
-    const yearSelect = document.getElementById('cal-year');
-    const monthSelect = document.getElementById('cal-month');
-    if (yearSelect.innerHTML === "") {
-        for (let y = 2024; y <= 2050; y++) { // 2050년까지 확장
-            const opt = document.createElement('option');
-            opt.value = y; opt.innerText = y + "년";
-            yearSelect.appendChild(opt);
+    function initCalendar() {
+        const yearSelect = document.getElementById('cal-year');
+        const monthSelect = document.getElementById('cal-month');
+        if (yearSelect.innerHTML === "") {
+            for (let y = 2024; y <= 2050; y++) { // 2050년까지 확장
+                const opt = document.createElement('option');
+                opt.value = y; opt.innerText = y + "년";
+                yearSelect.appendChild(opt);
+            }
+            for (let m = 1; m <= 12; m++) {
+                const opt = document.createElement('option');
+                opt.value = m; opt.innerText = m + "월";
+                monthSelect.appendChild(opt);
+            }
+            const now = new Date();
+            yearSelect.value = now.getFullYear();
+            monthSelect.value = now.getMonth() + 1;
         }
-        for (let m = 1; m <= 12; m++) {
-            const opt = document.createElement('option');
-            opt.value = m; opt.innerText = m + "월";
-            monthSelect.appendChild(opt);
-        }
-        const now = new Date();
-        yearSelect.value = now.getFullYear();
-        monthSelect.value = now.getMonth() + 1;
+        renderCalendar(Number(yearSelect.value), Number(monthSelect.value));
     }
-    renderCalendar(Number(yearSelect.value), Number(monthSelect.value));
-}
 
-function renderCalendar(year, month) {
-    const grid = document.getElementById('calendar-grid');
-    if(!grid) return;
-    grid.innerHTML = '';
-    ['일','월','화','수','목','금','토'].forEach(d => {
-        const div = document.createElement('div');
-        div.className = 'cal-header';
-        div.innerText = d;
-        grid.appendChild(div);
-    });
-    const firstDay = new Date(year, month - 1, 1).getDay();
-    const lastDate = new Date(year, month, 0).getDate();
-    for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-    for (let d = 1; d <= lastDate; d++) {
-        const dateStr = `${year}. ${month}. ${d}.`;
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'cal-day';
-        if (selectedDateStr === dateStr) dayDiv.classList.add('selected');
-        const dailyProfits = realizedProfits.filter(p => p.date === dateStr);
-        const dailySum = dailyProfits.reduce((sum, p) => sum + Number(p.price), 0);
-        dayDiv.innerHTML = `<span>${d}</span>`;
-        if (dailySum !== 0) {
-            dayDiv.classList.add('has-profit');
-            const dot = document.createElement('div');
-            dot.className = 'cal-profit-dot';
-            dot.innerText = dailySum > 0 ? '●' : '○';
-            dayDiv.appendChild(dot);
+    function renderCalendar(year, month) {
+        const grid = document.getElementById('calendar-grid');
+        if(!grid) return;
+        grid.innerHTML = '';
+        ['일','월','화','수','목','금','토'].forEach(d => {
+            const div = document.createElement('div');
+            div.className = 'cal-header';
+            div.innerText = d;
+            grid.appendChild(div);
+        });
+        const firstDay = new Date(year, month - 1, 1).getDay();
+        const lastDate = new Date(year, month, 0).getDate();
+        for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
+        for (let d = 1; d <= lastDate; d++) {
+            const dateStr = `${year}. ${month}. ${d}.`;
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'cal-day';
+            if (selectedDateStr === dateStr) dayDiv.classList.add('selected');
+            const dailyProfits = realizedProfits.filter(p => p.date === dateStr);
+            const dailySum = dailyProfits.reduce((sum, p) => sum + Number(p.price), 0);
+            dayDiv.innerHTML = `<span>${d}</span>`;
+            if (dailySum !== 0) {
+                dayDiv.classList.add('has-profit');
+                const dot = document.createElement('div');
+                dot.className = 'cal-profit-dot';
+                dot.innerText = dailySum > 0 ? '●' : '○';
+                dayDiv.appendChild(dot);
+            }
+            dayDiv.onclick = () => selectCalendarDate(dateStr);
+            grid.appendChild(dayDiv);
         }
-        dayDiv.onclick = () => selectCalendarDate(dateStr);
-        grid.appendChild(dayDiv);
+        updateMonthlyStats(year, month);
     }
-    updateMonthlyStats(year, month);
-}
 
-function updateMonthlyStats(year, month) {
-    const currentMonthPrefix = `${year}. ${month}.`;
-    const monthProfits = realizedProfits.filter(p => p.date.startsWith(currentMonthPrefix));
-    const totalProfit = monthProfits.reduce((sum, p) => sum + Number(p.price), 0);
+    function updateMonthlyStats(year, month) {
+        const currentMonthPrefix = `${year}. ${month}.`;
+        const monthProfits = realizedProfits.filter(p => p.date.startsWith(currentMonthPrefix));
+        const totalProfit = monthProfits.reduce((sum, p) => sum + Number(p.price), 0);
     
-    // 현재 표시된 총 자산 텍스트에서 숫자만 추출
-    const totalAssetElem = document.getElementById('main-total-stock');
-    const totalAsset = totalAssetElem ? Number(totalAssetElem.innerText.replace(/[^0-9.-]/g, '')) : 0;
+        // 현재 표시된 총 자산 텍스트에서 숫자만 추출
+        const totalAssetElem = document.getElementById('main-total-stock');
+        const totalAsset = totalAssetElem ? Number(totalAssetElem.innerText.replace(/[^0-9.-]/g, '')) : 0;
     
-    const yieldPercent = totalAsset > 0 ? (totalProfit / totalAsset) * 100 : 0;
+        const yieldPercent = totalAsset > 0 ? (totalProfit / totalAsset) * 100 : 0;
 
-    document.getElementById('month-total-money').innerText = totalProfit.toLocaleString() + "원";
-    document.getElementById('month-total-percent').innerText = yieldPercent.toFixed(2) + "%";
-    document.getElementById('month-total-percent').style.color = totalProfit >= 0 ? 'var(--danger)' : 'var(--target)';
-}
+        document.getElementById('month-total-money').innerText = totalProfit.toLocaleString() + "원";
+        document.getElementById('month-total-percent').innerText = yieldPercent.toFixed(2) + "%";
+        document.getElementById('month-total-percent').style.color = totalProfit >= 0 ? 'var(--danger)' : 'var(--target)';
+    }
 
-function selectCalendarDate(dateStr) {
-    selectedDateStr = dateStr;
-    document.getElementById('selected-date-label').innerText = dateStr;
-    document.getElementById('daily-input-area').style.display = 'block';
-    const listDisplay = document.getElementById('daily-list-display');
-    const dailyData = realizedProfits.filter(p => p.date === dateStr);
-    listDisplay.innerHTML = dailyData.map(p => `
-        <div style="font-size:0.75rem; display:flex; justify-content:space-between; margin-bottom:4px; border-bottom:1px dashed #eee; padding-bottom:2px;">
-            <span>${p.name}</span>
-            <b style="color:${p.price >= 0 ? 'var(--danger)' : 'var(--target)'}">${Number(p.price).toLocaleString()}원</b>
-        </div>
-    `).join('') || '<div style="font-size:0.7rem; color:#ccc;">기록 없음</div>';
-    initCalendar(); 
-}
+    function selectCalendarDate(dateStr) {
+        selectedDateStr = dateStr;
+        document.getElementById('selected-date-label').innerText = dateStr;
+        document.getElementById('daily-input-area').style.display = 'block';
+        const listDisplay = document.getElementById('daily-list-display');
+        const dailyData = realizedProfits.filter(p => p.date === dateStr);
+        listDisplay.innerHTML = dailyData.map(p => `
+            <div style="font-size:0.75rem; display:flex; justify-content:space-between; margin-bottom:4px; border-bottom:1px dashed #eee; padding-bottom:2px;">
+                <span>${p.name}</span>
+                <b style="color:${p.price >= 0 ? 'var(--danger)' : 'var(--target)'}">${Number(p.price).toLocaleString()}원</b>
+            </div>
+        `).join('') || '<div style="font-size:0.7rem; color:#ccc;">기록 없음</div>';
+        initCalendar(); 
+    }
 
-function saveDailyProfit() {
-    const price = document.getElementById('daily-profit-input').value;
-    if (price === "" || !selectedDateStr) return;
-    db.ref('realized_profits').push({
-        name: "일일수익",
-        price: Number(price),
-        date: selectedDateStr,
-        ts: Date.now()
-    }).then(() => {
-        document.getElementById('daily-profit-input').value = '';
-        selectCalendarDate(selectedDateStr);
-    });
-}
+    function saveDailyProfit() {
+        const price = document.getElementById('daily-profit-input').value;
+        if (price === "" || !selectedDateStr) return;
+        db.ref('realized_profits').push({
+            name: "일일수익",
+            price: Number(price),
+            date: selectedDateStr,
+            ts: Date.now()
+        }).then(() => {
+            document.getElementById('daily-profit-input').value = '';
+            selectCalendarDate(selectedDateStr);
+        });
+    }
 
-// [중요] 기존 initApp 함수를 찾아서 맨 마지막 줄에 initCalendar(); 를 추가하세요.
-function initApp() {
-    // ... 기존 코드들 ...
-    initCalendar(); // 이 줄을 꼭 추가해야 달력이 나타납니다.
-}
+    // [중요] 기존 initApp 함수를 찾아서 맨 마지막 줄에 initCalendar(); 를 추가하세요.
+    function initApp() {
+        // ... 기존 코드들 ...
+        initCalendar(); // 이 줄을 꼭 추가해야 달력이 나타납니다.
+    }
 </script>
 </body>
 </html>
