@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Intelligence Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -83,14 +83,6 @@
         .history-item { background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; }
         .pagination-ctrl { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; font-size: 0.85rem; }
         .pagination-ctrl button { background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
-
-        .cal-day { background: white; aspect-ratio: 1/1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; cursor: pointer; position: relative; }
-        .cal-day:hover { background: #f1f5f9; }
-        .cal-day.today { background: #eff6ff; border: 1px solid var(--target); }
-        .cal-day.has-profit { font-weight: bold; }
-        .cal-day.selected { background: var(--accent) !important; color: white !important; }
-        .cal-header { background: #f8fafc; font-weight: bold; padding: 5px 0; text-align: center; font-size: 0.65rem; color: var(--text-light); }
-        .cal-profit-dot { color: var(--danger); font-size: 0.6rem; position: absolute; bottom: 2px; }
     </style>
 </head>
 <body>
@@ -157,41 +149,7 @@
             <div id="realized-list"></div>
             <div class="pagination-ctrl" id="realized-pager"></div>
         </div>
-
-        <div class="card" style="margin-top: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <label style="font-size:0.85rem; font-weight:800;">📅 수익 달력 & 월간 통계</label>
-                <div style="display: flex; gap: 5px;">
-                    <select id="cal-year" onchange="initCalendar()" style="border:1px solid #ddd; border-radius:4px; font-size:0.8rem;"></select>
-                    <select id="cal-month" onchange="initCalendar()" style="border:1px solid #ddd; border-radius:4px; font-size:0.8rem;"></select>
-                </div>
-            </div>
-
-            <div id="monthly-summary-box" style="background: #f8fafc; padding: 12px; border-radius: 10px; margin-bottom: 15px; display: flex; justify-content: space-around; border: 1px solid #edf2f7;">
-                <div style="text-align: center;">
-                    <div style="font-size: 0.65rem; color: var(--text-light);">월간 수익 합계</div>
-                    <div id="month-total-money" style="font-weight: 800; color: var(--text-dark);">0원</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 0.65rem; color: var(--text-light);">월간 수익률</div>
-                    <div id="month-total-percent" style="font-weight: 800; color: var(--danger);">0.00%</div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px;">
-                <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #eee; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
-                    </div>
-
-                <div id="daily-detail-panel" style="background: #fff; border: 1px solid #f0f0f0; border-radius: 10px; padding: 10px;">
-                    <div id="selected-date-label" style="font-size: 0.8rem; font-weight: 800; color: var(--accent); margin-bottom: 10px;">날짜를 선택하세요</div>
-                    <div id="daily-input-area" style="display: none;">
-                        <input type="number" id="daily-profit-input" placeholder="수익금 입력" style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px; font-size:0.85rem;">
-                        <button onclick="saveDailyProfit()" style="width:100%; background:var(--accent); color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.8rem;">수익 저장</button>
-                    </div>
-                    <div id="daily-list-display" style="margin-top: 10px; max-height: 150px; overflow-y: auto;"></div>
-                </div>
-            </div>
-        </div>
+    </div>
 
     <div id="editor" style="display:none;">
         <div style="display:flex; flex-direction:column; margin-bottom:15px;">
@@ -449,141 +407,6 @@
         document.getElementById('realized-name').value = '';
         document.getElementById('realized-price').value = '';
     }
-
-    let selectedDateStr = ""; // 현재 선택된 날짜 (YYYY. M. D. 형식)
-
-    // 1. 달력 초기화 (연도/월 셀렉트 박스 생성 및 렌더링)
-    function initCalendar() {
-        const yearSelect = document.getElementById('cal-year');
-        const monthSelect = document.getElementById('cal-month');
-        
-        // 최초 실행 시 셀렉트 박스 옵션 생성 (2024~2050)
-        if (yearSelect.innerHTML === "") {
-            for (let y = 2024; y <= 2050; y++) {
-            const opt = document.createElement('option');
-            opt.value = y; opt.innerText = y + "년";
-            yearSelect.appendChild(opt);
-            }
-            for (let m = 1; m <= 12; m++) {
-            const opt = document.createElement('option');
-            opt.value = m; opt.innerText = m + "월";
-            monthSelect.appendChild(opt);
-            }
-            const now = new Date();
-            yearSelect.value = now.getFullYear();
-            monthSelect.value = now.getMonth() + 1;
-        }
-        renderCalendar(Number(yearSelect.value), Number(monthSelect.value));
-    }
-    // 2. 달력 그리기 및 월간 수익 계산
-    function renderCalendar(year, month) {
-        const grid = document.getElementById('calendar-grid');
-        grid.innerHTML = '';
-    
-        // 요일 헤더
-        ['일','월','화','수','목','금','토'].forEach(d => {
-            const div = document.createElement('div');
-            div.className = 'cal-header';
-            div.innerText = d;
-            grid.appendChild(div);
-        });
-
-        const firstDay = new Date(year, month - 1, 1).getDay();
-        const lastDate = new Date(year, month, 0).getDate();
-
-        // 빈 칸
-        for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-
-        // 날짜 및 해당 월 수익 계산을 위한 데이터 필터링
-        let monthTotal = 0;
-        const currentMonthPrefix = `${year}. ${month}.`; // "2024. 4." 형태
-
-        for (let d = 1; d <= lastDate; d++) {
-            const dateStr = `${year}. ${month}. ${d}.`;
-            const dayDiv = document.createElement('div');
-            dayDiv.className = 'cal-day';
-            if (selectedDateStr === dateStr) dayDiv.classList.add('selected');
-        
-            // 해당 날짜 수익 찾기
-            const dailyProfits = realizedProfits.filter(p => p.date === dateStr);
-            const dailySum = dailyProfits.reduce((sum, p) => sum + Number(p.price), 0);
-        
-            dayDiv.innerHTML = `<span>${d}</span>`;
-            if (dailySum !== 0) {
-                dayDiv.classList.add('has-profit');
-                const dot = document.createElement('div');
-                dot.className = 'cal-profit-dot';
-                dot.innerText = dailySum > 0 ? '●' : '○';
-                dayDiv.appendChild(dot);
-            }
-
-            dayDiv.onclick = () => selectCalendarDate(dateStr);
-            grid.appendChild(dayDiv);
-        }
-
-        // 월간 통계 업데이트
-        updateMonthlyStats(year, month);
-    }
-
-    // 3. 월간 통계 (금액 및 수익률) 계산
-    function updateMonthlyStats(year, month) {
-        const currentMonthPrefix = `${year}. ${month}.`;
-        const monthProfits = realizedProfits.filter(p => p.date.startsWith(currentMonthPrefix));
-        const totalProfit = monthProfits.reduce((sum, p) => sum + Number(p.price), 0);
-    
-        // 현재 총 자산 대비 수익률 계산 (기존 calculateTotal에서 계산된 값 활용)
-        const totalAssetStr = document.getElementById('total-asset-value').innerText.replace(/[^0-9.-]/g, '');
-        const totalAsset = Number(totalAssetStr) || 1; // 0 나누기 방지
-        const yieldPercent = (totalProfit / totalAsset) * 100;
-
-        document.getElementById('month-total-money').innerText = totalProfit.toLocaleString() + "원";
-        document.getElementById('month-total-percent').innerText = yieldPercent.toFixed(2) + "%";
-        document.getElementById('month-total-percent').style.color = totalProfit >= 0 ? 'var(--danger)' : 'var(--target)';
-    }
-
-    // 4. 날짜 클릭 시 입력창 활성화
-    function selectCalendarDate(dateStr) {
-        selectedDateStr = dateStr;
-        document.getElementById('selected-date-label').innerText = dateStr;
-        document.getElementById('daily-input-area').style.display = 'block';
-    
-        // 해당 날짜 수익 내역 표시
-        const listDisplay = document.getElementById('daily-list-display');
-        const dailyData = realizedProfits.filter(p => p.date === dateStr);
-    
-        listDisplay.innerHTML = dailyData.map(p => `
-            <div style="font-size:0.75rem; display:flex; justify-content:space-between; margin-bottom:4px; border-bottom:1px dashed #eee; padding-bottom:2px;">
-                <span>${p.name}</span>
-                <b style="color:${p.price >= 0 ? 'var(--danger)' : 'var(--target)'}">${Number(p.price).toLocaleString()}원</b>
-            </div>
-        `).join('') || '<div style="font-size:0.7rem; color:#ccc;">수익 기록이 없습니다.</div>';
-    
-        initCalendar(); // 선택 표시를 위해 다시 그림
-    }
-
-    // 5. 당일 수익 저장 (기존 addRealizedProfit 로직 활용)
-    function saveDailyProfit() {
-        const price = document.getElementById('daily-profit-input').value;
-        if (price === "" || !selectedDateStr) return;
-
-        db.ref('realized_profits').push({
-            name: "일일수익",
-            price: Number(price),
-            date: selectedDateStr,
-            ts: Date.now()
-        }).then(() => {
-            document.getElementById('daily-profit-input').value = '';
-            selectCalendarDate(selectedDateStr); // 목록 새로고침
-        });
-    }
-
-    // 기존 auth.onAuthStateChanged 내부의 initApp() 실행 시점에 달력 초기화도 추가해야 함
-    // 기존 코드의 initApp 함수 마지막에 initCalendar(); 를 한 줄 추가하세요.
-    const originalInitApp = initApp;
-    initApp = function() {
-        originalInitApp();
-        initCalendar();
-    };
 </script>
 </body>
 </html>
