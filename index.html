@@ -83,6 +83,23 @@
         .history-item { background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; }
         .pagination-ctrl { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; font-size: 0.85rem; }
         .pagination-ctrl button { background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+
+        /* 추가: 달력 스타일 */
+        .calendar-container { margin-top: 10px; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .calendar-day-label { font-size: 0.7rem; font-weight: bold; color: var(--text-light); padding-bottom: 5px; }
+        .calendar-day { padding: 8px 0; font-size: 0.8rem; border-radius: 8px; cursor: pointer; transition: background 0.2s; position: relative; }
+        .calendar-day:hover { background: #e2e8f0; }
+        .calendar-day.today { background: #dcfce7; color: var(--accent); font-weight: bold; }
+        .calendar-day.selected { background: var(--accent) !important; color: white; }
+        .has-profit::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--danger); border-radius: 50%; }
+        
+        /* 추가: 이달의 수익률 요약 */
+        .monthly-summary { display: flex; justify-content: space-between; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
+        .summary-item { text-align: center; flex: 1; }
+        .summary-label { font-size: 0.7rem; color: var(--text-light); display: block; margin-bottom: 4px; }
+        .summary-value { font-size: 1rem; font-weight: 800; }        
     </style>
 </head>
 <body>
@@ -216,6 +233,10 @@
     let historyPage = 1, realizedPage = 1;
     const historyLimit = 8, realizedLimit = 10;
 
+    // 추가: 달력 관련 변수
+    let currentViewDate = new Date();
+    let selectedDateStr = new Date().toLocaleDateString();
+
     function handleLogin() {
         const email = document.getElementById('login-email').value;
         const pw = document.getElementById('login-pw').value;
@@ -256,6 +277,8 @@
             const data = snap.val();
             realizedProfits = data ? Object.keys(data).map(k => ({id:k, ...data[k]})).reverse() : [];
             renderRealizedList();
+            renderCalendar(); // 추가: 데이터 갱신 시 달력도 갱신
+            calculateMonthlySummary(); // 추가: 이달의 수익 계산
         });
     }
 
@@ -276,6 +299,88 @@
         document.getElementById('main-display-cash').innerText = userCash.toLocaleString() + "원";
         const totalAsset = totalStockEvaluation + userCash;
         document.getElementById('total-asset-value').innerText = totalAsset.toLocaleString() + "원";
+    }
+
+    // 추가: 이달의 수익률 및 합계 계산
+    function calculateMonthlySummary() {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        const monthlyProfits = realizedProfits.filter(p => {
+            const pDate = new Date(p.date);
+            return pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear;
+        });
+
+        const totalProfit = monthlyProfits.reduce((acc, cur) => acc + Number(cur.price), 0);
+        
+        // 수익률 계산 (현재 총 자산 대비 이번 달 실현 수익)
+        const totalAsset = parseInt(document.getElementById('total-asset-value').innerText.replace(/,/g, '')) || 1;
+        const profitRate = (totalProfit / totalAsset) * 100;
+
+        const sumEl = document.getElementById('monthly-profit-sum');
+        const rateEl = document.getElementById('monthly-profit-rate');
+
+        sumEl.innerText = totalProfit.toLocaleString() + "원";
+        sumEl.style.color = totalProfit >= 0 ? 'var(--danger)' : 'var(--target)';
+        rateEl.innerText = profitRate.toFixed(2) + "%";
+        rateEl.style.color = profitRate >= 0 ? 'var(--danger)' : 'var(--target)';
+    }
+
+    // 추가: 달력 렌더링 함수
+    function renderCalendar() {
+        const year = currentViewDate.getFullYear();
+        const month = currentViewDate.getMonth();
+        document.getElementById('calendar-title').innerText = `${year}년 ${month + 1}월`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+        const calendarBody = document.getElementById('calendar-body');
+        calendarBody.innerHTML = '';
+
+        // 요일 라벨
+        ['일','월','화','수','목','금','토'].forEach(d => {
+            const el = document.createElement('div');
+            el.className = 'calendar-day-label';
+            el.innerText = d;
+            calendarBody.appendChild(el);
+        });
+
+        // 빈 칸
+        for (let i = 0; i < firstDay; i++) {
+            calendarBody.appendChild(document.createElement('div'));
+        }
+
+        // 날짜 채우기
+        for (let d = 1; d <= lastDate; d++) {
+            const dateStr = new Date(year, month, d).toLocaleDateString();
+            const dayEl = document.createElement('div');
+            dayEl.className = 'calendar-day';
+            if (dateStr === new Date().toLocaleDateString()) dayEl.classList.add('today');
+            if (dateStr === selectedDateStr) dayEl.classList.add('selected');
+            
+            // 해당 날짜에 수익 기록이 있는지 확인
+            const hasData = realizedProfits.some(p => new Date(p.date).toLocaleDateString() === dateStr);
+            if (hasData) dayEl.classList.add('has-profit');
+
+            dayEl.innerText = d;
+            dayEl.onclick = () => {
+                selectedDateStr = dateStr;
+                realizedPage = 1;
+                document.getElementById('selected-date-title').innerText = `${dateStr} 수익 목록`;
+                renderCalendar();
+                renderRealizedList();
+            };
+            calendarBody.appendChild(dayEl);
+        }
+    }
+
+    // 추가: 달력 월 변경
+    function changeMonth(diff) {
+        currentViewDate.setMonth(currentViewDate.getMonth() + diff);
+        // 2050년 제한
+        if (currentViewDate.getFullYear() > 2050) currentViewDate.setFullYear(2050);
+        renderCalendar();
     }
 
     function renderList() {
@@ -313,13 +418,25 @@
         });
     }
 
+    // 수정: 선택된 날짜의 데이터만 보여주도록 필터링 추가
     function renderRealizedList() {
         const container = document.getElementById('realized-list');
         const pager = document.getElementById('realized-pager');
         if (!container) return;
         container.innerHTML = '';
-        const totalPages = Math.ceil(realizedProfits.length / realizedLimit) || 1;
-        const paged = realizedProfits.slice((realizedPage-1)*realizedLimit, realizedPage*realizedLimit);
+
+        // 추가: 선택된 날짜 데이터 필터링
+        const filtered = realizedProfits.filter(p => new Date(p.date).toLocaleDateString() === selectedDateStr);
+        
+        const totalPages = Math.ceil(filtered.length / realizedLimit) || 1;
+        const paged = filtered.slice((realizedPage-1)*realizedLimit, realizedPage*realizedLimit);
+        
+        if (paged.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-light); font-size:0.8rem;">해당 날짜의 기록이 없습니다.</div>';
+            if(pager) pager.innerHTML = '';
+            return;
+        }
+
         paged.forEach(p => {
             const priceValue = Number(p.price) || 0;
             const isLoss = priceValue < 0;
@@ -340,6 +457,7 @@
         const count = Number(item.holdCount) || 0;
         const avg = Number(item.holdAvg) || 0;
         const latestPrice = historyArr.length > 0 ? Number(historyArr[0].price) : 0;
+        
         const buyRaw = count * avg;
         const buyFee = buyRaw * 0.00015;
         const totalPurchaseCost = buyRaw + buyFee;
@@ -349,15 +467,17 @@
         const totalEstimatedReturn = evalRaw - (sellFee + sellTax);
         const diff = totalEstimatedReturn - totalPurchaseCost;
         const percent = totalPurchaseCost > 0 ? (diff / totalPurchaseCost) * 100 : 0;
+        
         const profitAmountEl = document.getElementById('profit-amount');
         const profitPercentEl = document.getElementById('profit-percent');
         let displayDiff = Math.floor(diff).toLocaleString() + "원";
         if (diff > 0) displayDiff = "+" + displayDiff;
         profitAmountEl.innerText = `${displayDiff} (예상정산: ${Math.floor(totalEstimatedReturn).toLocaleString()}원)`;
         profitPercentEl.innerText = `${percent.toFixed(2)}%`;
+        
         if (diff > 1) { profitAmountEl.style.color = 'var(--danger)'; profitPercentEl.style.color = 'var(--danger)'; }
         else if (diff < -1) { profitAmountEl.style.color = 'var(--target)'; profitPercentEl.style.color = 'var(--target)'; }
-        else { profitAmountEl.style.color = 'var(--text-dark)'; profitPercentEl.style.color = 'var(--text-dark)'; }
+        
         document.getElementById('item-title').value = item.title || "";
         document.getElementById('item-description').value = item.description || ""; 
         document.getElementById('hold-count').value = item.holdCount || "";
@@ -399,11 +519,19 @@
     function deleteStock() { if(confirm("종목을 삭제하시겠습니까?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
     function addNewItem() { db.ref('stocks').push({ title: "새 종목", holdCount: 0, holdAvg: 0 }); }
     function goHome() { currentId = null; document.getElementById('editor').style.display = 'none'; document.getElementById('main-dashboard').style.display = 'block'; renderList(); }
+    
     function addRealizedProfit() {
         const name = document.getElementById('realized-name').value;
         const price = document.getElementById('realized-price').value;
         if(!name || price === "") return;
-        db.ref('realized_profits').push({ name, price: Number(price), date: new Date().toLocaleDateString(), ts: Date.now() });
+        // 수정: 날짜를 선택된 날짜(달력에서 클릭한 날짜) 기준으로 저장하거나 오늘 날짜로 저장
+        const targetDate = (selectedDateStr === new Date().toLocaleDateString()) ? new Date() : new Date(selectedDateStr);
+        db.ref('realized_profits').push({ 
+            name, 
+            price: Number(price), 
+            date: targetDate.toLocaleDateString(), 
+            ts: Date.now() 
+        });
         document.getElementById('realized-name').value = '';
         document.getElementById('realized-price').value = '';
     }
