@@ -50,15 +50,6 @@
         .total-asset-box span { color: #94a3b8; font-size: 0.75rem; display: block; margin-bottom: 4px; }
         .total-asset-box div { color: var(--white); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.5px; }
 
-        /* 기존 스타일들 아래에 추가 */
-        .cal-day { background: white; aspect-ratio: 1/1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; cursor: pointer; position: relative; }
-        .cal-day:hover { background: #f1f5f9; }
-        .cal-day.today { background: #eff6ff; border: 1px solid var(--target); }
-        .cal-day.has-profit { font-weight: bold; }
-        .cal-day.selected { background: var(--accent) !important; color: white !important; }
-        .cal-header { background: #f8fafc; font-weight: bold; padding: 5px 0; text-align: center; font-size: 0.65rem; color: var(--text-light); }
-        .cal-profit-dot { color: var(--danger); font-size: 0.6rem; position: absolute; bottom: 2px; }
-
         /* 리스트 아이템 레이아웃 (3차 우측 정렬) */
         #item-list { flex: 1; overflow-y: auto; }
         .list-item { 
@@ -92,6 +83,14 @@
         .history-item { background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; }
         .pagination-ctrl { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; font-size: 0.85rem; }
         .pagination-ctrl button { background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+
+        .cal-day { background: white; aspect-ratio: 1/1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; cursor: pointer; position: relative; }
+        .cal-day:hover { background: #f1f5f9; }
+        .cal-day.selected { background: var(--accent) !important; color: white !important; }
+        .cal-header { background: #f8fafc; font-weight: bold; padding: 5px 0; text-align: center; font-size: 0.65rem; color: var(--text-light); }
+        .cal-profit-dot { color: var(--danger); font-size: 0.6rem; position: absolute; bottom: 2px; }
+
+        
     </style>
 </head>
 <body>
@@ -157,15 +156,17 @@
             </div>
             <div id="realized-list"></div>
             <div class="pagination-ctrl" id="realized-pager"></div>
+        </div>
+
         <div class="card" style="margin-top: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <label style="font-size:0.85rem; font-weight:800;">📅 수익 달력 & 월간 통계</label>
+            <label style="font-size:0.85rem; font-weight:800;">📅 수익 달력 & 월간 통계</label>
             <div style="display: flex; gap: 5px;">
                 <select id="cal-year" onchange="initCalendar()" style="border:1px solid #ddd; border-radius:4px; font-size:0.8rem;"></select>
                 <select id="cal-month" onchange="initCalendar()" style="border:1px solid #ddd; border-radius:4px; font-size:0.8rem;"></select>
             </div>
         </div>
-
+        
         <div id="monthly-summary-box" style="background: #f8fafc; padding: 12px; border-radius: 10px; margin-bottom: 15px; display: flex; justify-content: space-around; border: 1px solid #edf2f7;">
             <div style="text-align: center;">
                 <div style="font-size: 0.65rem; color: var(--text-light);">월간 수익 합계</div>
@@ -180,15 +181,15 @@
         <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px;">
             <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #eee; border: 1px solid #eee; border-radius: 8px; overflow: hidden;"></div>
             <div id="daily-detail-panel" style="background: #fff; border: 1px solid #f0f0f0; border-radius: 10px; padding: 10px;">
-                <div id="selected-date-label" style="font-size: 0.8rem; font-weight: 800; color: var(--accent); margin-bottom: 10px;">날짜를 선택하세요</div>
+                <div id="selected-date-label" style="font-size: 0.8rem; font-weight: 800; color: var(--accent); margin-bottom: 10px;">날짜 선택</div>
                 <div id="daily-input-area" style="display: none;">
-                    <input type="number" id="daily-profit-input" placeholder="수익금 입력" style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px; font-size:0.85rem; width:100%; box-sizing:border-box;">
+                    <input type="number" id="daily-profit-input" placeholder="수익금" style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px; font-size:0.85rem; width:100%; box-sizing:border-box; border:none;">
                     <button onclick="saveDailyProfit()" style="width:100%; background:var(--accent); color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.8rem;">수익 저장</button>
                 </div>
                 <div id="daily-list-display" style="margin-top: 10px; max-height: 150px; overflow-y: auto;"></div>
             </div>
         </div>
-    </div> 
+    </div>
 
     <div id="editor" style="display:none;">
         <div style="display:flex; flex-direction:column; margin-bottom:15px;">
@@ -446,14 +447,14 @@
         document.getElementById('realized-name').value = '';
         document.getElementById('realized-price').value = '';
     }
-    // 스크립트 가장 하단부
+
     let selectedDateStr = "";
 
     function initCalendar() {
         const yearSelect = document.getElementById('cal-year');
         const monthSelect = document.getElementById('cal-month');
-        if (yearSelect.innerHTML === "") {
-            for (let y = 2024; y <= 2050; y++) { // 2050년까지 확장
+        if (yearSelect && yearSelect.innerHTML === "") {
+            for (let y = 2024; y <= 2030; y++) {
                 const opt = document.createElement('option');
                 opt.value = y; opt.innerText = y + "년";
                 yearSelect.appendChild(opt);
@@ -467,7 +468,7 @@
             yearSelect.value = now.getFullYear();
             monthSelect.value = now.getMonth() + 1;
         }
-        renderCalendar(Number(yearSelect.value), Number(monthSelect.value));
+        if (yearSelect) renderCalendar(Number(yearSelect.value), Number(monthSelect.value));
     }
 
     function renderCalendar(year, month) {
@@ -488,14 +489,15 @@
             const dayDiv = document.createElement('div');
             dayDiv.className = 'cal-day';
             if (selectedDateStr === dateStr) dayDiv.classList.add('selected');
+        
             const dailyProfits = realizedProfits.filter(p => p.date === dateStr);
             const dailySum = dailyProfits.reduce((sum, p) => sum + Number(p.price), 0);
+        
             dayDiv.innerHTML = `<span>${d}</span>`;
             if (dailySum !== 0) {
-                dayDiv.classList.add('has-profit');
                 const dot = document.createElement('div');
                 dot.className = 'cal-profit-dot';
-                dot.innerText = dailySum > 0 ? '●' : '○';
+                dot.innerText = '●';
                 dayDiv.appendChild(dot);
             }
             dayDiv.onclick = () => selectCalendarDate(dateStr);
@@ -509,11 +511,11 @@
         const monthProfits = realizedProfits.filter(p => p.date.startsWith(currentMonthPrefix));
         const totalProfit = monthProfits.reduce((sum, p) => sum + Number(p.price), 0);
     
-        // 현재 표시된 총 자산 텍스트에서 숫자만 추출
+        // 메인 화면의 평가 합계 금액 가져오기
         const totalAssetElem = document.getElementById('main-total-stock');
-        const totalAsset = totalAssetElem ? Number(totalAssetElem.innerText.replace(/[^0-9.-]/g, '')) : 0;
+        const totalAsset = totalAssetElem ? Number(totalAssetElem.innerText.replace(/[^0-9.-]/g, '')) : 1;
     
-        const yieldPercent = totalAsset > 0 ? (totalProfit / totalAsset) * 100 : 0;
+        const yieldPercent = (totalProfit / (totalAsset || 1)) * 100;
 
         document.getElementById('month-total-money').innerText = totalProfit.toLocaleString() + "원";
         document.getElementById('month-total-percent').innerText = yieldPercent.toFixed(2) + "%";
@@ -527,7 +529,7 @@
         const listDisplay = document.getElementById('daily-list-display');
         const dailyData = realizedProfits.filter(p => p.date === dateStr);
         listDisplay.innerHTML = dailyData.map(p => `
-            <div style="font-size:0.75rem; display:flex; justify-content:space-between; margin-bottom:4px; border-bottom:1px dashed #eee; padding-bottom:2px;">
+            <div style="font-size:0.75rem; display:flex; justify-content:space-between; margin-bottom:4px; border-bottom:1px dashed #eee;">
                 <span>${p.name}</span>
                 <b style="color:${p.price >= 0 ? 'var(--danger)' : 'var(--target)'}">${Number(p.price).toLocaleString()}원</b>
             </div>
@@ -548,12 +550,7 @@
             selectCalendarDate(selectedDateStr);
         });
     }
-
-    // [중요] 기존 initApp 함수를 찾아서 맨 마지막 줄에 initCalendar(); 를 추가하세요.
-    function initApp() {
-        // ... 기존 코드들 ...
-        initCalendar(); // 이 줄을 꼭 추가해야 달력이 나타납니다.
-    }
+    
 </script>
 </body>
 </html>
