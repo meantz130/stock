@@ -324,28 +324,35 @@
 
     // 추가: 이달의 수익률 및 합계 계산
     function calculateMonthlySummary() {
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-        
+        // 1. 현재 달력이 보여주고 있는 년/월 기준 추출
+        const viewYear = currentViewDate.getFullYear();
+        const viewMonth = currentViewDate.getMonth();
+
+        // 2. 해당 월의 데이터만 필터링
         const monthlyProfits = realizedProfits.filter(p => {
             const pDate = new Date(p.date);
-            return pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear;
+            return pDate.getMonth() === viewMonth && pDate.getFullYear() === viewYear;
         });
 
+        // 3. 수익 합계 계산
         const totalProfit = monthlyProfits.reduce((acc, cur) => acc + Number(cur.price), 0);
-        
-        // 수익률 계산 (현재 총 자산 대비 이번 달 실현 수익)
-        const totalAsset = parseInt(document.getElementById('total-asset-value').innerText.replace(/,/g, '')) || 1;
-        const profitRate = (totalProfit / totalAsset) * 100;
+
+        // 4. 수익률 계산 (현재 총 자산 대비 해당 월의 수익금)
+        const totalAssetStr = document.getElementById('total-asset-value').innerText.replace(/[^0-9.-]/g, '');
+        const totalAsset = parseInt(totalAssetStr) || 1;
+        const profitRate = (totalProfit / (totalAsset - totalProfit)) * 100; // 원금 대비 수익률 (근사치)
 
         const sumEl = document.getElementById('monthly-profit-sum');
         const rateEl = document.getElementById('monthly-profit-rate');
+        const titleEl = document.querySelector('.monthly-summary .summary-label'); // 제목 변경용
 
-        sumEl.innerText = totalProfit.toLocaleString() + "원";
-        sumEl.style.color = totalProfit >= 0 ? 'var(--danger)' : 'var(--target)';
-        rateEl.innerText = profitRate.toFixed(2) + "%";
-        rateEl.style.color = profitRate >= 0 ? 'var(--danger)' : 'var(--target)';
+        // 화면 반영
+        if (sumEl && rateEl) {
+            sumEl.innerText = totalProfit.toLocaleString() + "원";
+            sumEl.style.color = totalProfit >= 0 ? 'var(--danger)' : 'var(--target)';
+            rateEl.innerText = (totalProfit === 0 ? "0.00" : profitRate.toFixed(2)) + "%";
+            rateEl.style.color = totalProfit >= 0 ? 'var(--danger)' : 'var(--target)';
+        }
     }
 
     // 추가: 달력 렌더링 함수
@@ -401,7 +408,8 @@
         currentViewDate.setMonth(currentViewDate.getMonth() + diff);
         // 2050년 제한
         if (currentViewDate.getFullYear() > 2050) currentViewDate.setFullYear(2050);
-        renderCalendar();
+        renderCalendar();         // 달력 다시 그리기
+        calculateMonthlySummary(); // 달 변경 시 수익 요약도 다시 계산
     }
 
     function renderList() {
