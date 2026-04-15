@@ -94,6 +94,12 @@
         .summary-item { text-align: center; flex: 1; }
         .summary-label { font-size: 0.7rem; color: var(--text-light); display: block; margin-bottom: 4px; }
         .summary-value { font-size: 1rem; font-weight: 800; }
+
+        /* 드래그 중인 항목 스타일 */
+        .list-item.dragging {
+            opacity: 0.5;
+            background: var(--active-item);
+            border: 1px dashed var(--accent); }
     </style>
 </head>
 <body>
@@ -401,10 +407,24 @@
     function renderList() {
         const container = document.getElementById('item-list');
         container.innerHTML = '';
-        items.forEach(item => {
+
+        // 정렬 순서가 있다면 적용 (없다면 기본 순서)
+        const sortedItems = items.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        sortedItems.forEach((item, index) => {
             const div = document.createElement('div');
             div.className = `list-item ${currentId === item.id ? 'selected-active' : ''}`;
-            div.onclick = () => { 
+            div.setAttribute('draggable', true); // 드래그 가능 설정
+            div.dataset.id = item.id; // ID 저장
+
+             // 드래그 이벤트 리스너
+            div.addEventListener('dragstart', () => div.classList.add('dragging'));
+            div.addEventListener('dragend', () => {
+                div.classList.remove('dragging');
+                saveNewOrder(); // 드래그 종료 시 순서 저장
+            });
+
+            div.onclick = () => {
                 currentId = item.id; historyPage = 1;
                 document.getElementById('main-dashboard').style.display = 'none';
                 document.getElementById('editor').style.display = 'block';
@@ -412,6 +432,7 @@
                 syncEditor();
                 renderList();
             };
+            
             const avg = Number(item.holdAvg || 0).toLocaleString();
             const t3 = item.target3 ? Number(item.target3).toLocaleString() : '-';
             const count = item.holdCount || 0;
@@ -426,6 +447,41 @@
                 </div>`;
             container.appendChild(div);
         });
+
+        // 컨테이너 드래그 오버 이벤트
+        container.addEventListener('dragover', e => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(container, e.clientY);
+            const dragging = document.querySelector('.dragging');
+            if (afterElement == null) {
+                container.appendChild(dragging);
+            } else {
+                container.insertBefore(dragging, afterElement); }
+        });
+    }
+
+    // 드래그 위치 계산 함수
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.list-item:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest; }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // 변경된 순서를 DB에 저장
+    function saveNewOrder() {
+        const listItems = [...document.querySelectorAll('#item-list .list-item')];
+        const updates = {};
+        listItems.forEach((el, index) => {
+            const id = el.dataset.id;
+            updates[`/stocks/${id}/order`] = index;
+        });
+        db.ref().update(updates);
     }
 
     // 수정: 선택된 날짜의 데이터만 보여주도록 필터링 추가
