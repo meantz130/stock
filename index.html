@@ -412,6 +412,9 @@
         calculateMonthlySummary(); // 달 변경 시 수익 요약도 다시 계산
     }
 
+    /* 최적화: 렌더링 부하를 줄이기 위한 변수 */
+    let dragTimer = null;
+
     function renderList() {
         const container = document.getElementById('item-list');
         container.innerHTML = '';
@@ -419,17 +422,21 @@
         // 정렬 순서가 있다면 적용 (없다면 기본 순서)
         const sortedItems = items.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-        sortedItems.forEach((item, index) => {
+        sortedItems.forEach((item) => {
             const div = document.createElement('div');
             div.className = `list-item ${currentId === item.id ? 'selected-active' : ''}`;
             div.setAttribute('draggable', true); // 드래그 가능 설정
             div.dataset.id = item.id; // ID 저장
 
              // 드래그 이벤트 리스너
-            div.addEventListener('dragstart', () => div.classList.add('dragging'));
+            div.addEventListener('dragstart', (e) => {
+                div.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+                
             div.addEventListener('dragend', () => {
                 div.classList.remove('dragging');
-                saveNewOrder(); // 드래그 종료 시 순서 저장
+                saveNewOrder(); // 드래그가 끝났을 때만 DB에 저장 (렉 방지 핵심)
             });
 
             div.onclick = () => {
@@ -445,11 +452,11 @@
             const t3 = item.target3 ? Number(item.target3).toLocaleString() : '-';
             const count = item.holdCount || 0;
             div.innerHTML = `
-                <div style="font-weight:bold;">
+                <div style="font-weight:bold; pointer-events:none;">
                     ${item.title || "새 종목"} 
                     <span style="font-size:0.75rem; color:var(--text-light); font-weight:normal; margin-left:4px;">(${count})</span>
                 </div>
-                <div class="item-row">
+                <div class="item-row" style="pointer-events:none;">
                     <div class="item-info-left">평단: ${avg}</div>
                     <div class="item-info-right">희망가: ${t3}</div>
                 </div>`;
@@ -459,12 +466,20 @@
         // 컨테이너 드래그 오버 이벤트
         container.addEventListener('dragover', e => {
             e.preventDefault();
-            const afterElement = getDragAfterElement(container, e.clientY);
-            const dragging = document.querySelector('.dragging');
-            if (afterElement == null) {
-                container.appendChild(dragging);
-            } else {
-                container.insertBefore(dragging, afterElement); }
+            if (dragTimer) return;
+
+            dragTimer = requestAnimationFrame(() => {
+                const dragging = document.querySelector('.dragging');
+                if (!dragging) return;
+
+                const afterElement = getDragAfterElement(container, e.clientY);
+                if (afterElement == null) {
+                    container.appendChild(dragging);
+                } else {
+                    container.insertBefore(dragging, afterElement);
+                }
+                dragTimer = null;
+            });
         });
     }
 
@@ -487,9 +502,16 @@
         const updates = {};
         listItems.forEach((el, index) => {
             const id = el.dataset.id;
-            updates[`/stocks/${id}/order`] = index;
+            // 실제 데이터가 변경된 경우만 업데이트 객체에 추가
+            const item = items.find(i => i.id === id);
+            if (item && item.order !== index) {
+                updates[`/stocks/${id}/order`] = index;
+            }
         });
-        db.ref().update(updates);
+
+        if (Object.keys(updates).length > 0) {
+            db.ref().update(updates);
+        }
     }
 
     // 수정: 선택된 날짜의 데이터만 보여주도록 필터링 추가
