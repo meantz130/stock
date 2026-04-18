@@ -223,6 +223,24 @@
         </div>
 
         <div class="card">
+            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">🚩 목표 및 손절가</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                <div class="price-box" style="border-color: #dcfce7;">
+                    <label style="font-size:0.6rem; color: var(--accent);">단기목표</label>
+                    <input type="number" id="short-target" placeholder="금액" oninput="updateField('shortTarget', this.value)">
+                </div>
+                <div class="price-box" style="border-color: #dbeafe;">
+                    <label style="font-size:0.6rem; color: var(--target);">중장기목표</label>
+                    <input type="number" id="long-target" placeholder="금액" oninput="updateField('longTarget', this.value)">
+                </div>
+                <div class="price-box" style="border-color: #fee2e2;">
+                    <label style="font-size:0.6rem; color: var(--danger);">손절가</label>
+                    <input type="number" id="stop-loss" placeholder="금액" oninput="updateField('stopLoss', this.value)">
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
             <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">📅 종가 기록</label>
             <input type="number" id="manual-close-input" placeholder="금액 입력 후 Enter" onkeydown="handleManualSave(event)" style="border-bottom:2px solid #f1f5f9; margin-bottom:10px;">
             <div id="history-list"></div>
@@ -582,6 +600,10 @@
         document.getElementById('target-2').value = item.target2 || "";
         document.getElementById('target-3').value = item.target3 || "";
         document.getElementById('field-memo').value = item.memo || "";
+        // syncEditor 함수 내부에 추가
+        document.getElementById('short-target').value = item.shortTarget || "";
+        document.getElementById('long-target').value = item.longTarget || "";
+        document.getElementById('stop-loss').value = item.stopLoss || "";
         renderHistory(historyArr);
     }
 
