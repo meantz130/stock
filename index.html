@@ -223,19 +223,38 @@
         </div>
 
         <div class="card">
-            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">🚩 목표 및 손절가</label>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-                <div class="price-box" style="border-color: #dcfce7;">
-                    <label style="font-size:0.6rem; color: var(--accent);">단기목표</label>
-                    <input type="number" id="short-target" placeholder="금액" oninput="updateField('shortTarget', this.value)">
+            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">🚩 전략 상세 (범위 및 메모)</label>
+    
+            <div style="display:flex; gap:8px; margin-bottom:10px; align-items: stretch;">
+                <div class="price-box" style="flex: 1; border-color: #dcfce7; padding: 8px;">
+                    <label style="font-size:0.6rem; color: var(--accent); display:block; margin-bottom:4px;">단기 목표 (범위)</label>
+                    <input type="text" id="short-target" placeholder="예: 100~120" oninput="updateField('shortTarget', this.value)" style="font-weight:400; font-size:0.85rem;">
                 </div>
-                <div class="price-box" style="border-color: #dbeafe;">
-                    <label style="font-size:0.6rem; color: var(--target);">중장기목표</label>
-                    <input type="number" id="long-target" placeholder="금액" oninput="updateField('longTarget', this.value)">
+                <div class="price-box" style="flex: 1.5; border-color: #f1f5f9; padding: 8px;">
+                    <label style="font-size:0.6rem; color: var(--text-light); display:block; margin-bottom:4px;">단기 메모</label>
+                    <input type="text" id="short-memo" placeholder="비중 조절 등 메모" oninput="updateField('shortMemo', this.value)" style="font-weight:400; font-size:0.85rem;">
                 </div>
-                <div class="price-box" style="border-color: #fee2e2;">
-                    <label style="font-size:0.6rem; color: var(--danger);">손절가</label>
-                    <input type="number" id="stop-loss" placeholder="금액" oninput="updateField('stopLoss', this.value)">
+            </div>
+
+            <div style="display:flex; gap:8px; margin-bottom:10px; align-items: stretch;">
+                <div class="price-box" style="flex: 1; border-color: #dbeafe; padding: 8px;">
+                    <label style="font-size:0.6rem; color: var(--target); display:block; margin-bottom:4px;">중장기 목표 (범위)</label>
+                    <input type="text" id="long-target" placeholder="예: 150~200" oninput="updateField('longTarget', this.value)" style="font-weight:400; font-size:0.85rem;">
+                </div>
+                <div class="price-box" style="flex: 1.5; border-color: #f1f5f9; padding: 8px;">
+                    <label style="font-size:0.6rem; color: var(--text-light); display:block; margin-bottom:4px;">중장기 메모</label>
+                    <input type="text" id="long-memo" placeholder="재료 확인 등 메모" oninput="updateField('longMemo', this.value)" style="font-weight:400; font-size:0.85rem;">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items: stretch;">
+                <div class="price-box" style="flex: 1; border-color: #fee2e2; padding: 8px;">
+                    <label style="font-size:0.6rem; color: var(--danger); display:block; margin-bottom:4px;">손절가 (범위)</label>
+                    <input type="text" id="stop-loss" placeholder="예: 80~90" oninput="updateField('stopLoss', this.value)" style="font-weight:400; font-size:0.85rem;">
+                </div>
+                <div class="price-box" style="flex: 1.5; border-color: #f1f5f9; padding: 8px;">
+                    <label style="font-size:0.6rem; color: var(--text-light); display:block; margin-bottom:4px;">손절 메모</label>
+                    <input type="text" id="stop-memo" placeholder="이탈 시 대응책" oninput="updateField('stopMemo', this.value)" style="font-weight:400; font-size:0.85rem;">
                 </div>
             </div>
         </div>
@@ -600,10 +619,13 @@
         document.getElementById('target-2').value = item.target2 || "";
         document.getElementById('target-3').value = item.target3 || "";
         document.getElementById('field-memo').value = item.memo || "";
-        // syncEditor 함수 내부에 추가
+        // syncEditor 함수 내부에 추가하여 데이터 불러오기
         document.getElementById('short-target').value = item.shortTarget || "";
+        document.getElementById('short-memo').value = item.shortMemo || "";
         document.getElementById('long-target').value = item.longTarget || "";
+        document.getElementById('long-memo').value = item.longMemo || "";
         document.getElementById('stop-loss').value = item.stopLoss || "";
+        document.getElementById('stop-memo').value = item.stopMemo || "";
         renderHistory(historyArr);
     }
 
