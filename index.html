@@ -739,7 +739,19 @@
     function deleteRealized(id) { if(confirm("기록 삭제?")) db.ref(`realized_profits/${id}`).remove(); }
     function deleteStock() { if(confirm("종목을 삭제하시겠습니까?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
     function addNewItem() { db.ref('stocks').push({ title: "새 종목", holdCount: 0, holdAvg: 0 }); }
-    function goHome() { currentId = null; document.getElementById('editor').style.display = 'none'; document.getElementById('main-dashboard').style.display = 'block'; renderList(); }
+    function goHome() {
+        currentId = null;
+    
+        // 나갈 때 테마 입력창을 비워줌으로써 잔상을 방지합니다.
+        if(document.getElementById('edit-theme')) {
+            document.getElementById('edit-theme').value = "";
+        }
+    
+        document.getElementById('editor').style.display = 'none';
+        document.getElementById('profile-section').style.display = 'none'; // 프로필 섹션도 함께 닫기
+        document.getElementById('main-dashboard').style.display = 'block';
+        renderList();
+    }
     
     function addRealizedProfit() {
         const name = document.getElementById('realized-name').value;
