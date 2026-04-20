@@ -813,13 +813,16 @@
 
     function updateStockField(f, v) {
         if(!currentId) return;
-        // stocks/종목ID/theme 경로에만 값을 저장함
-        db.ref(`stocks/${currentId}`).update({
-            [field]: value
-        }).then(() => {
-            console.log("테마 저장 완료");
-        }).catch((error) => {
-            console.error("저장 실패:", error);
+    
+        // v가 빈 문자열("")이면 해당 테마 정보를 제거하거나 빈 값으로 업데이트
+        db.ref(`stocks/${currentId}`).update({ [f]: v }).then(() => {
+            // 성공적으로 업데이트 된 후 내부 데이터(items)도 즉시 반영되도록 합니다.
+            const item = items.find(i => i.id === currentId);
+            if(item) item[f] = v;
+            renderList(); // 메인 리스트 갱신
+            if(document.getElementById('profile-section').style.display === 'block') {
+                renderProfileData(); // 프로필 섹션이 열려있다면 즉시 갱신
+            }
         });
     }
 
@@ -848,7 +851,7 @@
                 themeMap[theme] = (themeMap[theme] || 0) + evaluation;
             }
             return { ...item, evaluation, count, theme };
-        }).filter(item => item.count > 0).sort((a, b) => b.evaluation - a.evaluation);
+        }).filter(item => item.count > 0 && item.theme !== null);
 
         // 2. 종목 상세 표 & 종목 차트 데이터 준비
         const stockLabels = [];
