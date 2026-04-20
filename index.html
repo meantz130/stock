@@ -135,6 +135,13 @@
         .edit-item input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
         
         .theme-tag { display: inline-block; padding: 4px 10px; background: rgba(5, 150, 105, 0.1); color: #059669; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(5, 150, 105, 0.2); }
+
+        /* 향후 비중 입력창 스타일 */
+        .target-input { width: 45px; padding: 4px 6px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.8rem; text-align: right; background: #f8fafc; }
+
+        /* 테마 상세 표 간격 축소 */
+        #profile-theme-list td { padding: 8px 10px; font-size: 0.85rem; }
+        .arrow-icon { color: var(--text-light); margin: 0 5px; font-size: 0.7rem; }
     </style>
 </head>
 <body>
@@ -346,7 +353,10 @@
                 <h3 style="font-size:0.9rem;">테마 상세</h3>
                 <table class="info-table">
                     <thead>
-                        <tr><th>테마명</th><th style="text-align:right;">비중</th></tr>
+                        <tr>
+                            <th>테마명</th>
+                            <th style="text-align:right;">현재비중 → 향후비중</th>
+                        </tr>
                     </thead>
                     <tbody id="profile-theme-list"></tbody>
                 </table>
@@ -780,7 +790,56 @@
         document.getElementById('editor').style.display = 'none';
         document.getElementById('profile-section').style.display = 'block';
         if(window.innerWidth <= 768) toggleMenu();
-        renderProfileData();
+        
+        // 실제 표를 생성하고 데이터를 렌더링하는 부분
+        const themeList = document.getElementById('profile-theme-list');
+    
+        // 비중 계산을 위한 데이터 준비 (기존 변수 활용)
+        let totalVal = 0;
+        const themeData = [];
+        const themeLabels = [];
+    
+        // 전역 stocks 객체에서 데이터 추출
+        const themeAggr = {};
+        Object.values(stocks).forEach(s => {
+            const val = s.price * s.quantity;
+            themeAggr[s.theme] = (themeAggr[s.theme] || 0) + val;
+            totalVal += val;
+        });
+
+        for (const [t, v] of Object.entries(themeAggr)) {
+            themeLabels.push(t);
+            themeData.push(v);
+        }
+
+        // 표 생성 스크립트 (화살표 및 입력창 포함)
+        themeList.innerHTML = themeData.map((val, idx) => {
+            const percent = totalVal > 0 ? ((val / totalVal) * 100).toFixed(1) : 0;
+            const themeName = themeLabels[idx];
+            return `
+                <tr>
+                    <td style="font-weight:600; font-size:0.85rem;">${themeName}</td>
+                    <td style="text-align:right; padding: 6px 8px;">
+                        <span style="font-size:0.85rem;">${percent}%</span>
+                        <span style="color:#94a3b8; margin:0 3px; font-size:0.7rem;">→</span>
+                        <input type="number" class="target-input" placeholder="0" 
+                            onchange="saveTargetWeight('${themeName}', this.value)"
+                            value="${getTargetWeight(themeName)}"
+                            style="width:40px; padding:3px 5px; border:1px solid #e2e8f0; border-radius:4px; font-size:0.8rem; text-align:right; background:#f8fafc;">
+                        <span style="font-size:0.7rem; color:#9ca3af;">%</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // 데이터를 브라우저에 저장하고 불러오는 함수 (showProfile 바깥에 두세요)
+    function saveTargetWeight(theme, value) {
+        localStorage.setItem(`target_${theme}`, value);
+    }
+
+    function getTargetWeight(theme) {
+        return localStorage.getItem(`target_${theme}`) || "";
     }
 
     // 홈으로 갈 때 프로필 섹션 숨기기 위해 goHome 함수 수정
