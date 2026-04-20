@@ -239,10 +239,10 @@
                   placeholder="이 주식에 대한 간단한 설명을 입력하세요">
          </div>
 
-        <div class="input-group">
+        <div class="edit-item" style="margin-top: 15px; margin-bottom: 25px;">
             <label>테마 / 카테고리</label>
-            <div id="categoryContainer"> <input type="text" id="stockCategory" placeholder="테마를 입력하고 엔터를 누르세요">
-            </div>
+            <input type="text" id="edit-theme" oninput="updateField('theme', this.value)" placeholder="예: 반도체, 2차전지">
+            <div id="theme-tag-display" class="theme-tag-container" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
         </div>
 
         <div class="card">
@@ -923,64 +923,6 @@
         });
         setChartInstance(newChart);
     }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        // 실제 HTML에 있는 ID인 'edit-theme'를 사용합니다.
-        const categoryInput = document.getElementById('edit-theme');
-        if (!categoryInput) return;
-
-        // 입력창을 감싸고 있는 부모 요소를 컨테이너로 사용
-        const container = categoryInput.parentElement;
-
-        categoryInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && this.value.trim() !== "") {
-                e.preventDefault(); // 페이지 새로고침 방지
-                const value = this.value.trim();
-            
-                // 1. 데이터 업데이트 함수 강제 호출 (이래야 그래프에 반영됩니다)
-                if (typeof updateField === 'function') {
-                    updateField('theme', value);
-                }
-
-                // 2. 버튼으로 전환
-                convertToButton(value);
-            }
-        });
-
-        function convertToButton(value) {
-            categoryInput.style.display = 'none';
-
-            // 기존에 생성된 버튼이 있다면 제거 (중복 방지)
-            const oldBtn = container.querySelector('.category-tag-btn');
-            if (oldBtn) oldBtn.remove();
-
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'category-tag-btn';
-            btn.innerText = value + " ✕"; // 닫기 표시 추가
-            btn.style.cssText = `
-                background-color: var(--accent);
-                color: white;
-                border: none;
-                padding: 8px 15px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 0.9rem;
-                font-weight: bold;
-                width: 100%;
-                text-align: left;
-                margin-top: 5px;
-            `;
-
-            btn.onclick = function() {
-                categoryInput.style.display = 'block';
-                categoryInput.focus();
-                this.remove(); 
-            };
-
-            container.appendChild(btn);
-        }
-    });
 </script>
 </body>
 </html>
