@@ -814,7 +814,13 @@
     function updateStockField(f, v) {
         if(!currentId) return;
         // stocks/종목ID/theme 경로에만 값을 저장함
-        db.ref(`stocks/${currentId}`).update({ [f]: v });
+        db.ref(`stocks/${currentId}`).update({
+            [field]: value
+        }).then(() => {
+            console.log("테마 저장 완료");
+        }).catch((error) => {
+            console.error("저장 실패:", error);
+        });
     }
 
     // [수정] 프로필 데이터 렌더링 및 차트 생성
