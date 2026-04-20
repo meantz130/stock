@@ -134,7 +134,7 @@
         /* 4. 클릭(포커스) 시 강조 효과 */
         .edit-item input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
         
-        .theme-tag { display: inline-block; padding: 2px 8px; background: rgba(5, 150, 105, 0.1); color: var(--accent); border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-top: 4px; }
+        .theme-tag { display: inline-block; padding: 4px 10px; background: rgba(5, 150, 105, 0.1); color: #059669; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(5, 150, 105, 0.2); }
     </style>
 </head>
 <body>
@@ -241,7 +241,8 @@
 
         <div class="edit-item" style="margin-top: 15px; margin-bottom: 25px;">
             <label>테마 / 카테고리</label>
-            <input type="text" id="edit-theme" onchange="updateStockField('theme', this.value)" placeholder="예: 반도체, 2차전지">
+            <input type="text" id="edit-theme" oninput="updateField('theme', this.value)" placeholder="예: 반도체, 2차전지">
+            <div id="theme-tag-display" class="theme-tag-container" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
         </div>
 
         <div class="card">
@@ -667,46 +668,59 @@
     function syncEditor() {
         const item = items.find(i => i.id === currentId);
         if(!item) return;
+
         const historyArr = item.manualHistory ? Object.entries(item.manualHistory).map(([k, v]) => ({k, ...v})).sort((a,b) => b.ts - a.ts) : [];
+    
+        // 수익률 계산 로직
         const count = Number(item.holdCount) || 0;
         const avg = Number(item.holdAvg) || 0;
         const latestPrice = historyArr.length > 0 ? Number(historyArr[0].price) : 0;
-        
-        const buyRaw = count * avg;
-        const buyFee = buyRaw * 0.00015;
-        const totalPurchaseCost = buyRaw + buyFee;
-        const evalRaw = count * latestPrice;
-        const sellFee = evalRaw * 0.00015;
-        const sellTax = evalRaw * 0.0020;
-        const totalEstimatedReturn = evalRaw - (sellFee + sellTax);
-        const diff = totalEstimatedReturn - totalPurchaseCost;
-        const percent = totalPurchaseCost > 0 ? (diff / totalPurchaseCost) * 100 : 0;
-        
-        const profitAmountEl = document.getElementById('profit-amount');
-        const profitPercentEl = document.getElementById('profit-percent');
-        let displayDiff = Math.floor(diff).toLocaleString() + "원";
-        if (diff > 0) displayDiff = "+" + displayDiff;
-        profitAmountEl.innerText = `${displayDiff} (예상정산: ${Math.floor(totalEstimatedReturn).toLocaleString()}원)`;
-        profitPercentEl.innerText = `${percent.toFixed(2)}%`;
-        
-        if (diff > 1) { profitAmountEl.style.color = 'var(--danger)'; profitPercentEl.style.color = 'var(--danger)'; }
-        else if (diff < -1) { profitAmountEl.style.color = 'var(--target)'; profitPercentEl.style.color = 'var(--target)'; }
-        
+        const buyTotal = count * avg;
+        const currentEval = count * latestPrice;
+        const diff = currentEval - buyTotal;
+        const percent = buyTotal > 0 ? (diff / buyTotal) * 100 : 0;
+    
+        // UI 업데이트
+        document.getElementById('profit-amount').innerText = `${diff > 0 ? '+' : ''}${Math.floor(diff).toLocaleString()}원`;
+        document.getElementById('profit-percent').innerText = `${percent.toFixed(2)}%`;
+        document.getElementById('profit-amount').style.color = diff >= 0 ? 'var(--danger)' : 'var(--target)';
+        document.getElementById('profit-percent').style.color = diff >= 0 ? 'var(--danger)' : 'var(--target)';
+
+        // 필드 값 동기화
         document.getElementById('item-title').value = item.title || "";
         document.getElementById('item-description').value = item.description || ""; 
+        document.getElementById('edit-theme').value = item.theme || "";
+
+        // [핵심 추가] 테마/카테고리 입력 시 바로 아래에 태그 형태로 표시
+        const tagContainer = document.getElementById('theme-tag-display');
+        if (tagContainer) {
+            tagContainer.innerHTML = '';
+            if(item.theme) {
+                // 쉼표로 구분된 테마들을 각각 태그로 생성
+                item.theme.split(',').forEach(t => {
+                    if(t.trim()) {
+                        const span = document.createElement('span');
+                        span.className = 'theme-tag';
+                        span.innerText = t.trim();
+                        tagContainer.appendChild(span);
+                    }
+                });
+            }
+        }
+
         document.getElementById('hold-count').value = item.holdCount || "";
         document.getElementById('hold-avg').value = item.holdAvg || "";
         document.getElementById('target-1').value = item.target1 || "";
         document.getElementById('target-2').value = item.target2 || "";
         document.getElementById('target-3').value = item.target3 || "";
-        document.getElementById('field-memo').value = item.memo || "";
-        // syncEditor 함수 내부에 추가하여 데이터 불러오기
         document.getElementById('short-target').value = item.shortTarget || "";
         document.getElementById('short-memo').value = item.shortMemo || "";
         document.getElementById('long-target').value = item.longTarget || "";
         document.getElementById('long-memo').value = item.longMemo || "";
         document.getElementById('stop-loss').value = item.stopLoss || "";
         document.getElementById('stop-memo').value = item.stopMemo || "";
+        document.getElementById('field-memo').value = item.memo || "";
+    
         renderHistory(historyArr);
     }
 
@@ -803,19 +817,23 @@
     function renderProfileData() {
         const stockList = document.getElementById('profile-stock-list');
         const themeList = document.getElementById('profile-theme-list');
-        stockList.innerHTML = '';
+        if (!stockList || !themeList) return;
+
+        stockList.innerHTML = ''; 
         themeList.innerHTML = '';
 
-        // 1. 데이터 가공
         let totalEval = 0;
-        let themeMap = {}; 
+        let themeMap = {}; // 테마별 합계를 저장할 객체
     
+        // 1. 데이터 가공 및 총 평가액 계산
         let profileData = items.map(item => {
             const count = Number(item.holdCount) || 0;
             const history = item.manualHistory ? Object.values(item.manualHistory).sort((a,b) => b.ts - a.ts) : [];
             const latestPrice = history.length > 0 ? Number(history[0].price) : (Number(item.holdAvg) || 0);
             const evaluation = count * latestPrice;
-            const theme = item.theme || "미분류";
+        
+            // 테마 추출 (여러 개일 경우 첫 번째 것을 주 테마로 사용)
+            const theme = item.theme ? item.theme.split(',')[0].trim() : "미분류";
 
             if(evaluation > 0) {
                 totalEval += evaluation;
@@ -824,26 +842,24 @@
             return { ...item, evaluation, count, theme };
         }).filter(item => item.count > 0).sort((a, b) => b.evaluation - a.evaluation);
 
-        // 2. 종목 상세 표 & 종목 차트 데이터 준비
-        const stockLabels = [];
-        const stockValues = [];
-
+        // 2. 종목별 리스트 및 차트 데이터 생성
+        const stockLabels = [], stockValues = [];
         profileData.forEach(item => {
             const prop = totalEval > 0 ? ((item.evaluation / totalEval) * 100).toFixed(1) : 0;
-            stockLabels.push(item.title);
+            stockLabels.push(item.title); 
             stockValues.push(item.evaluation);
-
+        
             stockList.innerHTML += `
                 <tr>
-                    <td><strong>${item.title}</strong><br><span class="theme-tag">${item.theme}</span></td>
+                    <td><strong>${item.title}</strong><br><span style="font-size:0.7rem; color:var(--accent)">${item.theme}</span></td>
                     <td style="text-align:right;">${prop}%<br><small>${item.evaluation.toLocaleString()}원</small></td>
                 </tr>`;
         });
 
-        // 3. 테마 상세 표 & 테마 차트 데이터 준비
+        // 3. 테마별 리스트 및 차트 데이터 생성
         const themeLabels = Object.keys(themeMap).sort((a,b) => themeMap[b] - themeMap[a]);
         const themeValues = themeLabels.map(label => themeMap[label]);
-
+    
         themeLabels.forEach(label => {
             const prop = totalEval > 0 ? ((themeMap[label] / totalEval) * 100).toFixed(1) : 0;
             themeList.innerHTML += `
@@ -853,7 +869,7 @@
                 </tr>`;
         });
 
-        // 4. Chart.js 그래프 그리기
+        // 4. Chart.js 그래프 그리기 호출
         drawPieChart('stockPieChart', stockLabels, stockValues, stockChart, (c) => stockChart = c);
         drawPieChart('themePieChart', themeLabels, themeValues, themeChart, (c) => themeChart = c);
     }
