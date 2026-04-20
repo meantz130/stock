@@ -560,8 +560,10 @@
 
             div.onclick = () => {
                 currentId = item.id; historyPage = 1;
-                document.getElementById('main-dashboard').style.display = 'none';
-                document.getElementById('editor').style.display = 'block';
+                document.getElementById('main-dashboard').style.display = 'none'; // 메인 대시보드 숨김
+                document.getElementById('profile-section').style.display = 'none'; // 내 정보 관리 섹션 숨김 (이 부분이 추가됨)
+                document.getElementById('editor').style.display = 'block';         // 에디터(상세창) 표시
+                
                 if(window.innerWidth <= 768) toggleMenu();
                 syncEditor();
                 renderList();
