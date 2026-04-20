@@ -130,9 +130,6 @@
     
         /* 3. 테마 입력창 자체 스타일 (기존 입력창과 분위기 통일) */
         .edit-item input[type="text"] { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: 'Pretendard', sans-serif; font-size: 0.9rem; background-color: var(--white); transition: var(--transition); outline: none; }
-    
-        /* 4. 클릭(포커스) 시 강조 효과 */
-        .edit-item input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
         
         .theme-tag { display: inline-block; padding: 4px 10px; background: rgba(5, 150, 105, 0.1); color: #059669; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(5, 150, 105, 0.2); }
     </style>
@@ -241,8 +238,7 @@
 
         <div class="edit-item" style="margin-top: 15px; margin-bottom: 25px;">
             <label>테마 / 카테고리</label>
-            <input type="text" id="edit-theme" oninput="updateField('theme', this.value)" placeholder="예: 반도체, 2차전지">
-            <div id="theme-tag-display" class="theme-tag-container" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
+            <input type="text" id="edit-theme" placeholder="테마/카테고리 입력 후 엔터 (예: 반도체, AI)">
         </div>
 
         <div class="card">
@@ -693,23 +689,6 @@
         document.getElementById('item-description').value = item.description || ""; 
         document.getElementById('edit-theme').value = item.theme || "";
 
-        // [핵심 추가] 테마/카테고리 입력 시 바로 아래에 태그 형태로 표시
-        const tagContainer = document.getElementById('theme-tag-display');
-        if (tagContainer) {
-            tagContainer.innerHTML = '';
-            if(item.theme) {
-                // 쉼표로 구분된 테마들을 각각 태그로 생성
-                item.theme.split(',').forEach(t => {
-                    if(t.trim()) {
-                        const span = document.createElement('span');
-                        span.className = 'theme-tag';
-                        span.innerText = t.trim();
-                        tagContainer.appendChild(span);
-                    }
-                });
-            }
-        }
-
         document.getElementById('hold-count').value = item.holdCount || "";
         document.getElementById('hold-avg').value = item.holdAvg || "";
         document.getElementById('target-1').value = item.target1 || "";
@@ -772,6 +751,36 @@
         document.getElementById('realized-name').value = '';
         document.getElementById('realized-price').value = '';
     }
+
+    // 테마 입력창 잠금/해제 기능 추가
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeInput = document.getElementById('edit-theme');
+    
+        if (themeInput) {
+            // [엔터키 누르면 잠금]
+            themeInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    if (this.value.trim() !== "") {
+                        this.readOnly = true;            
+                        this.style.backgroundColor = "#f3f4f6"; // 연한 회색으로 잠금 표시
+                        this.style.cursor = "not-allowed";
+                        this.style.border = "1px solid #d1d5db";
+                    }
+                }
+            });
+
+            // [클릭하면 잠금 해제]
+            themeInput.addEventListener('click', function() {
+                if (this.readOnly) {
+                    this.readOnly = false;           
+                    this.style.backgroundColor = "#ffffff"; // 흰색으로 복구
+                    this.style.cursor = "text";
+                    this.style.border = "1px solid var(--accent)";
+                    this.focus();
+                }
+            });
+        }
+    });
 
     // 내 정보 관리 섹션 보기
     function showProfile() {
