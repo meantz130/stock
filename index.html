@@ -135,12 +135,6 @@
         .edit-item input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
         
         .theme-tag { display: inline-block; padding: 4px 10px; background: rgba(5, 150, 105, 0.1); color: #059669; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(5, 150, 105, 0.2); }
-
-        /* 향후 비중 관련 스타일 */
-        .future-weight-input { width: 60px; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; font-size: 0.85rem; }
-        .future-weight-btn { background-color: var(--accent); color: white; border: none; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: var(--transition); display: inline-flex; align-items: center; gap: 5px; }
-        .future-weight-btn:hover { background-color: #047857; transform: translateY(-1px); }
-        .future-weight-btn::after { content: '✕'; font-size: 0.7rem; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -352,7 +346,7 @@
                 <h3 style="font-size:0.9rem;">테마 상세</h3>
                 <table class="info-table">
                     <thead>
-                        <tr><th>테마명</th><th>현재 비중</th><th>향후 비중</th><th>수익률</th>
+                        <tr><th>테마명</th><th style="text-align:right;">비중</th></tr>
                     </thead>
                     <tbody id="profile-theme-list"></tbody>
                 </table>
@@ -929,61 +923,6 @@
         });
         setChartInstance(newChart);
     }
-
-    // 1. 향후 비중을 업데이트하는 함수
-    async function updateFutureWeight(themeName, value) {
-        if (!value || value <= 0) return;
-    
-        const user = auth.currentUser;
-        if (user) {
-            // Firebase 경로: themes/테마명/futureWeight 에 저장
-            await db.ref(`users/${user.uid}/themes/${themeName}`).update({
-                futureWeight: value
-            });
-            loadPortfolio(); // 화면 새로고침
-        }
-    }
-
-    // 2. 향후 비중을 삭제하는 함수
-    async function deleteFutureWeight(themeName) {
-        const user = auth.currentUser;
-        if (user) {
-            await db.ref(`users/${user.uid}/themes/${themeName}/futureWeight`).remove();
-            loadPortfolio(); // 화면 새로고침
-        }
-    }
-
-    // 3. 테이블 렌더링 로직 (기존 렌더링 함수 내의 해당 부분 수정)
-    // themeDetailsRow를 생성하는 반복문 내부라고 가정합니다.
-    function renderThemeRow(themeName, data) {
-        const futureWeight = data.futureWeight || ""; // 데이터가 있는지 확인
-
-        let weightCellContent = "";
-        if (futureWeight) {
-            // 숫자가 있으면 버튼으로 표시
-            weightCellContent = `
-                <button class="future-weight-btn" onclick="deleteFutureWeight('${themeName}')">
-                    ${futureWeight}%
-                </button>`;
-        } else {
-            // 숫자가 없으면 입력창 표시
-            weightCellContent = `
-                <input type="number" 
-                       class="future-weight-input" 
-                       placeholder="0" 
-                       onchange="updateFutureWeight('${themeName}', this.value)">`;
-        }
-
-        return `
-            <tr>
-                <td>${themeName}</td>
-                <td>${data.currentWeight}%</td>
-                <td>${weightCellContent}</td> ... 나머지 칸들
-            </tr>
-        `;
-    }
-
-    
 </script>
 </body>
 </html>
