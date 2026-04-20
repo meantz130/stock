@@ -239,10 +239,8 @@
                   placeholder="이 주식에 대한 간단한 설명을 입력하세요">
          </div>
 
-        <div class="edit-item" style="margin-top: 15px; margin-bottom: 25px;">
-            <label>테마 / 카테고리</label>
-            <input type="text" id="edit-theme" oninput="updateField('theme', this.value)" placeholder="예: 반도체, 2차전지">
-            <div id="theme-tag-display" class="theme-tag-container" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
+        <div id="categoryContainer" style="display: flex; align-items: center; gap: 8px;">
+            <input type="text" id="stockCategory" placeholder="테마/카테고리">
         </div>
 
         <div class="card">
@@ -923,6 +921,51 @@
         });
         setChartInstance(newChart);
     }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+    const categoryInput = document.getElementById('stockCategory');
+    const container = document.getElementById('categoryContainer');
+
+    // 1. 입력창에서 Enter를 누르면 버튼으로 전환
+    categoryInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && this.value.trim() !== "") {
+            convertToButton(this.value.trim());
+        }
+    });
+
+    // 2. 버튼으로 전환하는 함수
+    function convertToButton(value) {
+        // 기존 입력창 숨기기
+        categoryInput.style.display = 'none';
+
+        // 새로운 버튼 생성
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'category-tag-btn'; // CSS 스타일링용
+        btn.innerText = value;
+        btn.style.cssText = `
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        `;
+
+        // 버튼 클릭 시 다시 입력창으로 복구
+        btn.onclick = function() {
+            categoryInput.style.display = 'block';
+            categoryInput.focus();
+            this.remove(); 
+        };
+
+        container.appendChild(btn);
+        
+        // 중요: 버튼으로 바뀌어도 기존 차트 업데이트 로직은 
+        // stockCategory.value를 참조하므로 값은 그대로 유지됩니다.
+    }
+});
 </script>
 </body>
 </html>
