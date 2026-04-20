@@ -118,9 +118,20 @@
         .chart-container { flex: 1; min-width: 300px; background: var(--white); padding: 20px; border-radius: 15px; border: 1px solid #f0f0f0; text-align: center; }
         .chart-container canvas { max-height: 250px; margin: 0 auto; }
 
+        /* 숫자 버튼 스타일 */
+        .num-btn { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: 20px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.2s; box-shadow: 0 2px 5px rgba(5, 150, 105, 0.2); }
+        .num-btn:hover { transform: translateY(-1px); background: #047857; }
+        .num-btn .del-x { font-size: 0.9rem; opacity: 0.8; font-weight: normal; }
+
+        /* 입력창 스타일 */
+        .theme-num-input { width: 80%; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; }
+        .theme-num-input:focus { border-color: var(--accent); background: white; }
+
         /* 하단 정보 레이아웃 */
-        .info-wrapper { display: flex; gap: 20px; flex-wrap: wrap; }
-        .info-box { flex: 1; min-width: 300px; }
+        .info-wrapper { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-start; }
+        .info-box.stock-detail { flex: 1.2; min-width: 300px; }
+        .info-box.theme-detail { flex: 0.7; min-width: 200px; } 
+        .info-box.theme-number-box { flex: 1.1; min-width: 250px; }
 
         /* 1. 에디터 아이템 전체 간격 조정 (보유현황창과 띄우기) */
         .edit-item { margin-bottom: 25px; width: 100%; }
@@ -318,37 +329,34 @@
 
     <div id="profile-section">
         <div class="top-bar">
-            <h2 style="margin:0; font-size:1.1rem; font-weight:900;">포트폴리오 정밀 분석</h2>
+            <h2 style="margin:0; font-size:1.1rem; font-weight:900;">Portfolio Analysis</h2>
         </div>
 
         <div class="charts-wrapper">
-            <div class="chart-container">
-                <h3 style="font-size:0.9rem; margin-bottom:15px;">종목별 비중</h3>
-                <canvas id="stockPieChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <h3 style="font-size:0.9rem; margin-bottom:15px;">테마별 비중</h3>
-                <canvas id="themePieChart"></canvas>
-            </div>
+            <div class="chart-container"><h3>자산 구성 (종목별)</h3><canvas id="asset-chart"></canvas></div>
+            <div class="chart-container"><h3>테마 분포</h3><canvas id="theme-chart"></canvas></div>
         </div>
 
         <div class="info-wrapper">
-            <div class="info-box profile-card">
-                <h3 style="font-size:0.9rem;">종목 상세</h3>
+            <div class="info-box profile-card stock-detail">
+                <h3>종목 상세</h3>
                 <table class="info-table">
-                    <thead>
-                        <tr><th>종목명</th><th style="text-align:right;">비중</th></tr>
-                    </thead>
+                    <thead><tr><th>종목명</th><th>평가금액</th><th>비중</th></tr></thead>
                     <tbody id="profile-stock-list"></tbody>
                 </table>
             </div>
-            <div class="info-box profile-card">
-                <h3 style="font-size:0.9rem;">테마 상세</h3>
+            <div class="info-box profile-card theme-detail">
+                <h3>테마 상세</h3>
                 <table class="info-table">
-                    <thead>
-                        <tr><th>테마명</th><th style="text-align:right;">비중</th></tr>
-                    </thead>
+                    <thead><tr><th>테마명</th><th>비중</th></tr></thead>
                     <tbody id="profile-theme-list"></tbody>
+                </table>
+            </div>
+            <div class="info-box profile-card theme-number-box">
+                <h3>테마별 수치 설정</h3>
+                <table class="info-table">
+                    <thead><tr><th>테마명</th><th>향후비중</th></tr></thead>
+                    <tbody id="profile-theme-number-list"></tbody>
                 </table>
             </div>
         </div>
@@ -396,6 +404,15 @@
             initApp();
         } else {
             document.getElementById('login-overlay').style.display = 'flex';
+
+        // 테마 숫자 데이터 실시간 연동
+            db.ref('theme_numbers').on('value', snapshot => {
+                themeNumbers = snapshot.val() || {};
+                // 프로필 화면이 열려있을 때만 리렌더링
+                if(document.getElementById('profile-section').style.display === 'block') {
+                    renderThemeNumberTable();
+                }
+            });
         }
     });
 
@@ -781,6 +798,73 @@
         document.getElementById('profile-section').style.display = 'block';
         if(window.innerWidth <= 768) toggleMenu();
         renderProfileData();
+        renderThemeNumberTable();
+    }
+
+    // 테마별 숫자 테이블 렌더링 함수
+    function renderThemeNumberTable() {
+        const list = document.getElementById('profile-theme-number-list');
+        if(!list) return;
+        list.innerHTML = '';
+
+        // 현재 보유 종목들에서 고유 테마 목록 추출
+        let uniqueThemes = [];
+        items.forEach(item => {
+            if(item.theme) {
+                item.theme.split(',').forEach(t => {
+                    const trimmed = t.trim();
+                    if(trimmed && !uniqueThemes.includes(trimmed)) uniqueThemes.push(trimmed);
+                });
+            }
+        });
+
+        uniqueThemes.sort().forEach(theme => {
+            const tr = document.createElement('tr');
+        
+            const tdName = document.createElement('td');
+            tdName.innerText = theme;
+            tdName.style.fontWeight = "600";
+        
+            const tdValue = document.createElement('td');
+            const savedVal = themeNumbers[theme];
+
+            if(savedVal !== undefined && savedVal !== null) {
+                // 값이 있으면 숫자 버튼 표시
+                tdValue.innerHTML = `
+                    <button class="num-btn" onclick="deleteThemeNumber('${theme}')">
+                        ${savedVal} <span class="del-x">×</span>
+                    </button>
+                `;
+            } else {
+                // 값이 없으면 입력창 표시
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'theme-num-input';
+                input.placeholder = '숫자 입력';
+                input.onkeydown = (e) => {
+                    if(e.key === 'Enter' && e.target.value) {
+                        saveThemeNumber(theme, e.target.value);
+                    }
+                };
+                tdValue.appendChild(input);
+            }
+
+            tr.appendChild(tdName);
+            tr.appendChild(tdValue);
+            list.appendChild(tr);
+        });
+    }
+
+    // 데이터 저장 함수
+    function saveThemeNumber(theme, val) {
+        db.ref(`theme_numbers/${theme}`).set(Number(val));
+    }
+
+    // 데이터 삭제 함수
+    function deleteThemeNumber(theme) {
+        if(confirm(`${theme}의 수치를 삭제하시겠습니까?`)) {
+            db.ref(`theme_numbers/${theme}`).remove();
+        }
     }
 
     // 홈으로 갈 때 프로필 섹션 숨기기 위해 goHome 함수 수정
