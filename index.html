@@ -752,50 +752,86 @@
         document.getElementById('realized-price').value = '';
     }
 
-   // 페이지 로드 후 실행될 수 있도록 설정
+    function editStock(id) {
+        currentEditingId = id;
+        const stock = stocks[id];
+    
+        // 기본 정보 로드
+        document.getElementById('edit-name').value = stock.name;
+        document.getElementById('edit-price').value = stock.price;
+        document.getElementById('edit-target').value = stock.targetPrice || '';
+        document.getElementById('edit-stop').value = stock.stopLoss || '';
+        document.getElementById('edit-memo').value = stock.memo || '';
+    
+        // 테마/카테고리 입력창 처리 (이전 종목 데이터 잔상 해결)
+        const themeInput = document.getElementById('edit-theme');
+        if (themeInput) {
+            // 해당 종목에 저장된 테마가 있으면 표시, 없으면 빈칸으로 초기화
+            themeInput.value = stock.theme || ""; 
+        
+            // 입력창 상태 초기화 (잠금 해제 및 배경색 복구)
+            themeInput.readOnly = false;
+            themeInput.style.backgroundColor = "#ffffff";
+            themeInput.style.cursor = "text";
+            themeInput.style.border = "1px solid #d1d5db";
+        }
+
+        // 기존 태그 표시 영역 비우기 (버튼 생성 방지)
+        const display = document.getElementById('theme-tag-display');
+        if (display) display.innerHTML = '';
+
+        // 편집기 모달 표시
+        document.getElementById('editor').classList.add('active');
+    }
+
+    // 테마 입력창 전용 이벤트 핸들러
     document.addEventListener('DOMContentLoaded', function() {
         const themeInput = document.getElementById('edit-theme');
     
         if (themeInput) {
-            // [엔터키 입력 시 저장 및 잠금]
+            // [엔터키 누르면 저장 및 잠금]
             themeInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
-                    const newValue = this.value.trim(); // 공란 포함 입력값 가져오기
+                    const newValue = this.value.trim(); // 공란 포함 값 가져오기
                 
-                    // UI 잠금 처리
+                    // 1. UI 잠금 시각화
                     this.readOnly = true;            
                     this.style.backgroundColor = "#f3f4f6"; 
                     this.style.cursor = "not-allowed";
+                    this.style.border = "1px solid #d1d5db";
 
-                    // 현재 수정 중인 종목 데이터 업데이트 및 Firebase 저장
+                    // 2. 데이터 업데이트 및 DB 저장
                     if (currentEditingId && stocks[currentEditingId]) {
-                        stocks[currentEditingId].theme = newValue; // 로컬 데이터 업데이트
+                        // 로컬 메모리 업데이트
+                        stocks[currentEditingId].theme = newValue;
                     
-                        // Firebase에 실시간 반영
-                        if (db) {
-                            const user = auth.currentUser;
-                            if (user) {
-                                db.ref(`users/${user.uid}/stocks/${currentEditingId}`).update({
-                                    theme: newValue
-                                }).then(() => {
-                                    console.log("테마가 성공적으로 저장되었습니다.");
-                                    // 포트폴리오 정밀 분석 화면 실시간 업데이트
-                                    updateThemeAnalysis(); 
-                                }).catch(error => {
-                                    console.error("저장 중 오류 발생:", error);
-                                });
-                            }
+                        // Firebase 데이터베이스 저장 (내 정보 관리 연동 핵심)
+                        const user = auth.currentUser;
+                        if (user && db) {
+                            db.ref(`users/${user.uid}/stocks/${currentEditingId}`).update({
+                                theme: newValue
+                            }).then(() => {
+                                console.log("테마 저장 완료:", newValue === "" ? "공란" : newValue);
+                            
+                                // 3. 내 정보 관리(포트폴리오 분석) 화면 즉시 갱신
+                                if (typeof updateThemeAnalysis === 'function') {
+                                    updateThemeAnalysis();
+                                }
+                            }).catch((error) => {
+                                console.error("데이터 저장 실패:", error);
+                            });
                         }
                     }
                 }
             });
 
-            // [클릭 시 잠금 해제]
+            // [클릭하면 수정 가능하게 해제]
             themeInput.addEventListener('click', function() {
                 if (this.readOnly) {
                     this.readOnly = false;           
                     this.style.backgroundColor = "#ffffff"; 
                     this.style.cursor = "text";
+                    this.style.border = "1px solid var(--accent)";
                     this.focus();
                 }
             });
