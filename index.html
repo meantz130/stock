@@ -79,6 +79,10 @@
         .pagination-ctrl { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; font-size: 0.85rem; }
         .pagination-ctrl button { background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
 
+        /* 목표 비중 입력창 스타일 */
+        .goal-input { width: 60px; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px; text-align: right; font-size: 0.85rem; color: var(--target); font-weight: bold; background: #f8fafc; }
+        .goal-input:focus { border-color: var(--accent); background: #fff; outline: none; }
+
         /* 추가: 달력 스타일 */
         .calendar-container { margin-top: 10px; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -346,7 +350,10 @@
                 <h3 style="font-size:0.9rem;">테마 상세</h3>
                 <table class="info-table">
                     <thead>
-                        <tr><th>테마명</th><th style="text-align:right;">비중</th></tr>
+                        <tr>
+                            <th style="width: 40%;">테마명</th>
+                            <th style="text-align:right; width: 30%;">현재 비중</th>
+                            <th style="text-align:right; width: 30%;">목표 비중</th> </tr>
                     </thead>
                     <tbody id="profile-theme-list"></tbody>
                 </table>
@@ -922,6 +929,43 @@
             }
         });
         setChartInstance(newChart);
+    }
+
+    // 테마 리스트 렌더링 함수 수정
+    function renderThemeList(themeData) {
+        const listBody = document.getElementById('profile-theme-list');
+        listBody.innerHTML = '';
+
+        // Firebase에서 목표 비중 데이터를 가져옴 (예시 경로: theme_goals)
+        db.ref('theme_goals').once('value', (snapshot) => {
+            const goals = snapshot.val() || {};
+
+            Object.keys(themeData).forEach(theme => {
+                const percent = themeData[theme].percent.toFixed(1);
+                const goalValue = goals[theme] || ""; // 저장된 목표치 확인
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${theme}</td>
+                    <td style="text-align:right;">${percent}%</td>
+                    <td style="text-align:right;">
+                        <input type="number" 
+                               class="goal-input" 
+                               placeholder="0" 
+                               value="${goalValue}" 
+                               onchange="saveThemeGoal('${theme}', this.value)"> %
+                    </td>
+                `;
+                listBody.appendChild(tr);
+            });
+        });
+    }
+
+    // 목표 비중 저장 함수
+    function saveThemeGoal(theme, value) {
+        db.ref('theme_goals/' + theme).set(Number(value))
+          .then(() => console.log(theme + ' 목표 설정 완료'))
+          .catch(err => console.error('저장 실패:', err));
     }
 </script>
 </body>
