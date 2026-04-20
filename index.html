@@ -799,10 +799,18 @@
         renderHistory();
     }
 
+    function updateStockField(f, v) {
+        if(!currentId) return;
+        // stocks/종목ID/theme 경로에만 값을 저장함
+        db.ref(`stocks/${currentId}`).update({ [f]: v });
+    }
+
     // [수정] 프로필 데이터 렌더링 및 차트 생성
     function renderProfileData() {
         const stockList = document.getElementById('profile-stock-list');
         const themeList = document.getElementById('profile-theme-list');
+        if(!stockList || !themeList) return;
+        
         stockList.innerHTML = '';
         themeList.innerHTML = '';
 
