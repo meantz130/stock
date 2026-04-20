@@ -122,7 +122,19 @@
         .info-wrapper { display: flex; gap: 20px; flex-wrap: wrap; }
         .info-box { flex: 1; min-width: 300px; }
 
-        .theme-tag { display: inline-block; padding: 2px 8px; background: #e0f2fe; color: #0369a1; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        /* 1. 에디터 아이템 전체 간격 조정 (보유현황창과 띄우기) */
+        .edit-item { margin-bottom: 25px; width: 100%; }
+
+        /* 2. 테마 입력창 라벨 스타일 */
+        .edit-item label { display: block; font-size: 0.85rem; color: var(--text-light); margin-bottom: 8px; font-weight: 600; }
+    
+        /* 3. 테마 입력창 자체 스타일 (기존 입력창과 분위기 통일) */
+        .edit-item input[type="text"] { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: 'Pretendard', sans-serif; font-size: 0.9rem; background-color: var(--white); transition: var(--transition); outline: none; }
+    
+        /* 4. 클릭(포커스) 시 강조 효과 */
+        .edit-item input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
+        
+        .theme-tag { display: inline-block; padding: 2px 8px; background: rgba(5, 150, 105, 0.1); color: var(--accent); border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -227,7 +239,7 @@
                   placeholder="이 주식에 대한 간단한 설명을 입력하세요">
          </div>
 
-        <div class="edit-item">
+        <div class="edit-item" style="margin-top: 15px; margin-bottom: 25px;">
             <label>테마 / 카테고리</label>
             <input type="text" id="edit-theme" onchange="updateStockField('theme', this.value)" placeholder="예: 반도체, 2차전지">
         </div>
