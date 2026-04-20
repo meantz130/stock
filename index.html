@@ -239,8 +239,10 @@
                   placeholder="이 주식에 대한 간단한 설명을 입력하세요">
          </div>
 
-        <div id="categoryContainer" style="display: flex; align-items: center; gap: 8px;">
-            <input type="text" id="stockCategory" placeholder="테마/카테고리">
+        <div class="input-group">
+            <label>테마 / 카테고리</label>
+            <div id="categoryContainer"> <input type="text" id="stockCategory" placeholder="테마를 입력하고 엔터를 누르세요">
+            </div>
         </div>
 
         <div class="card">
@@ -921,51 +923,42 @@
         });
         setChartInstance(newChart);
     }
-    
+
     document.addEventListener('DOMContentLoaded', () => {
-    const categoryInput = document.getElementById('stockCategory');
-    const container = document.getElementById('categoryContainer');
+            const categoryInput = document.getElementById('stockCategory');
+            // 만약 categoryContainer가 없다면 생성하거나 stockCategory의 부모 요소를 참조해야 합니다.
+            const container = categoryInput.parentElement; 
 
-    // 1. 입력창에서 Enter를 누르면 버튼으로 전환
-    categoryInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && this.value.trim() !== "") {
-            convertToButton(this.value.trim());
-        }
-    });
+            categoryInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && this.value.trim() !== "") {
+                    e.preventDefault(); // 엔터 시 폼 제출 방지
+                    convertToButton(this.value.trim());
+                }
+            });
 
-    // 2. 버튼으로 전환하는 함수
-    function convertToButton(value) {
-        // 기존 입력창 숨기기
-        categoryInput.style.display = 'none';
-
-        // 새로운 버튼 생성
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'category-tag-btn'; // CSS 스타일링용
-        btn.innerText = value;
-        btn.style.cssText = `
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            padding: 5px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        `;
-
-        // 버튼 클릭 시 다시 입력창으로 복구
-        btn.onclick = function() {
-            categoryInput.style.display = 'block';
-            categoryInput.focus();
-            this.remove(); 
-        };
-
-        container.appendChild(btn);
-        
-        // 중요: 버튼으로 바뀌어도 기존 차트 업데이트 로직은 
-        // stockCategory.value를 참조하므로 값은 그대로 유지됩니다.
-    }
-});
+            function convertToButton(value) {
+                categoryInput.style.display = 'none';
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerText = value;
+                btn.style.cssText = `
+                    background-color: var(--accent);
+                    color: white;
+                    border: none;
+                    padding: 5px 12px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                `;
+                btn.onclick = function() {
+                    categoryInput.style.display = 'block';
+                    categoryInput.value = ""; // 필요 시 비워줌
+                    categoryInput.focus();
+                    this.remove(); 
+                };
+                container.appendChild(btn);
+            }
+        });
 </script>
 </body>
 </html>
