@@ -739,19 +739,7 @@
     function deleteRealized(id) { if(confirm("기록 삭제?")) db.ref(`realized_profits/${id}`).remove(); }
     function deleteStock() { if(confirm("종목을 삭제하시겠습니까?")) { db.ref(`stocks/${currentId}`).remove(); goHome(); } }
     function addNewItem() { db.ref('stocks').push({ title: "새 종목", holdCount: 0, holdAvg: 0 }); }
-    function goHome() {
-        currentId = null;
-    
-        // 나갈 때 테마 입력창을 비워줌으로써 잔상을 방지합니다.
-        if(document.getElementById('edit-theme')) {
-            document.getElementById('edit-theme').value = "";
-        }
-    
-        document.getElementById('editor').style.display = 'none';
-        document.getElementById('profile-section').style.display = 'none'; // 프로필 섹션도 함께 닫기
-        document.getElementById('main-dashboard').style.display = 'block';
-        renderList();
-    }
+    function goHome() { currentId = null; document.getElementById('editor').style.display = 'none'; document.getElementById('main-dashboard').style.display = 'block'; renderList(); }
     
     function addRealizedProfit() {
         const name = document.getElementById('realized-name').value;
@@ -811,27 +799,10 @@
         renderHistory();
     }
 
-    function updateStockField(f, v) {
-        if(!currentId) return;
-    
-        // v가 빈 문자열("")이면 해당 테마 정보를 제거하거나 빈 값으로 업데이트
-        db.ref(`stocks/${currentId}`).update({ [f]: v }).then(() => {
-            // 성공적으로 업데이트 된 후 내부 데이터(items)도 즉시 반영되도록 합니다.
-            const item = items.find(i => i.id === currentId);
-            if(item) item[f] = v;
-            renderList(); // 메인 리스트 갱신
-            if(document.getElementById('profile-section').style.display === 'block') {
-                renderProfileData(); // 프로필 섹션이 열려있다면 즉시 갱신
-            }
-        });
-    }
-
     // [수정] 프로필 데이터 렌더링 및 차트 생성
     function renderProfileData() {
         const stockList = document.getElementById('profile-stock-list');
         const themeList = document.getElementById('profile-theme-list');
-        if(!stockList || !themeList) return;
-        
         stockList.innerHTML = '';
         themeList.innerHTML = '';
 
@@ -851,7 +822,7 @@
                 themeMap[theme] = (themeMap[theme] || 0) + evaluation;
             }
             return { ...item, evaluation, count, theme };
-        }).filter(item => item.count > 0 && item.theme !== null);
+        }).filter(item => item.count > 0).sort((a, b) => b.evaluation - a.evaluation);
 
         // 2. 종목 상세 표 & 종목 차트 데이터 준비
         const stockLabels = [];
