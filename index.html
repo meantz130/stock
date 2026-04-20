@@ -785,56 +785,18 @@
 
     // 내 정보 관리 섹션 보기
     function showProfile() {
-        currentId = null; // 에디터 비활성화
+        currentId = null; 
         document.getElementById('main-dashboard').style.display = 'none';
         document.getElementById('editor').style.display = 'none';
         document.getElementById('profile-section').style.display = 'block';
         if(window.innerWidth <= 768) toggleMenu();
-        
-        // 실제 표를 생성하고 데이터를 렌더링하는 부분
-        const themeList = document.getElementById('profile-theme-list');
     
-        // 비중 계산을 위한 데이터 준비 (기존 변수 활용)
-        let totalVal = 0;
-        const themeData = [];
-        const themeLabels = [];
-    
-        // 전역 stocks 객체에서 데이터 추출
-        const themeAggr = {};
-        Object.values(stocks).forEach(s => {
-            const val = s.price * s.quantity;
-            themeAggr[s.theme] = (themeAggr[s.theme] || 0) + val;
-            totalVal += val;
-        });
-
-        for (const [t, v] of Object.entries(themeAggr)) {
-            themeLabels.push(t);
-            themeData.push(v);
-        }
-
-        // 표 생성 스크립트 (화살표 및 입력창 포함)
-        themeList.innerHTML = themeData.map((val, idx) => {
-            const percent = totalVal > 0 ? ((val / totalVal) * 100).toFixed(1) : 0;
-            const themeName = themeLabels[idx];
-            return `
-                <tr>
-                    <td style="font-weight:600; font-size:0.85rem;">${themeName}</td>
-                    <td style="text-align:right; padding: 6px 8px;">
-                        <span style="font-size:0.85rem;">${percent}%</span>
-                        <span style="color:#94a3b8; margin:0 3px; font-size:0.7rem;">→</span>
-                        <input type="number" class="target-input" placeholder="0" 
-                            onchange="saveTargetWeight('${themeName}', this.value)"
-                            value="${getTargetWeight(themeName)}"
-                            style="width:40px; padding:3px 5px; border:1px solid #e2e8f0; border-radius:4px; font-size:0.8rem; text-align:right; background:#f8fafc;">
-                        <span style="font-size:0.7rem; color:#9ca3af;">%</span>
-                    </td>
-                </tr>
-            `;
-        }).join('');
+        // 이 함수가 위에서 정의한 수정된 로직을 실행합니다.
+        renderProfileData(); 
     }
 
     // 데이터를 브라우저에 저장하고 불러오는 함수 (showProfile 바깥에 두세요)
-    function saveTargetWeight(theme, value) {
+   function saveTargetWeight(theme, value) {
         localStorage.setItem(`target_${theme}`, value);
     }
 
@@ -876,63 +838,40 @@
 
     // [수정] 프로필 데이터 렌더링 및 차트 생성
     function renderProfileData() {
-        const stockList = document.getElementById('profile-stock-list');
         const themeList = document.getElementById('profile-theme-list');
-        if (!stockList || !themeList) return;
+        if (!themeList) return;
 
-        stockList.innerHTML = ''; 
-        themeList.innerHTML = '';
+        let totalVal = 0;
+        const themeAggr = {};
 
-        let totalEval = 0;
-        let themeMap = {}; // 테마별 합계를 저장할 객체
-    
-        // 1. 데이터 가공 및 총 평가액 계산
-        let profileData = items.map(item => {
-            const count = Number(item.holdCount) || 0;
-            const history = item.manualHistory ? Object.values(item.manualHistory).sort((a,b) => b.ts - a.ts) : [];
-            const latestPrice = history.length > 0 ? Number(history[0].price) : (Number(item.holdAvg) || 0);
-            const evaluation = count * latestPrice;
-        
-            // 테마 추출 (여러 개일 경우 첫 번째 것을 주 테마로 사용)
-            const theme = item.theme ? item.theme.split(',')[0].trim() : "미분류";
+        // 'stocks' 대신 파일 내에서 실제로 데이터를 담고 있는 객체를 참조해야 합니다.
+        // 보통 실시간 리스너에서 전역 변수에 데이터를 저장해둡니다.
+        // 만약 전역변수명이 다르다면 이 부분을 해당 변수명으로 수정해야 합니다.
+        const targetData = (typeof stocks !== 'undefined') ? stocks : (window.allStocks || {});
 
-            if(evaluation > 0) {
-                totalEval += evaluation;
-                themeMap[theme] = (themeMap[theme] || 0) + evaluation;
-            }
-            return { ...item, evaluation, count, theme };
-        }).filter(item => item.count > 0).sort((a, b) => b.evaluation - a.evaluation);
-
-        // 2. 종목별 리스트 및 차트 데이터 생성
-        const stockLabels = [], stockValues = [];
-        profileData.forEach(item => {
-            const prop = totalEval > 0 ? ((item.evaluation / totalEval) * 100).toFixed(1) : 0;
-            stockLabels.push(item.title); 
-            stockValues.push(item.evaluation);
-        
-            stockList.innerHTML += `
-                <tr>
-                    <td><strong>${item.title}</strong><br><span style="font-size:0.7rem; color:var(--accent)">${item.theme}</span></td>
-                    <td style="text-align:right;">${prop}%<br><small>${item.evaluation.toLocaleString()}원</small></td>
-                </tr>`;
+        Object.values(targetData).forEach(s => {
+            const val = (s.price || 0) * (s.quantity || 0);
+            themeAggr[s.theme] = (themeAggr[s.theme] || 0) + val;
+            totalVal += val;
         });
 
-        // 3. 테마별 리스트 및 차트 데이터 생성
-        const themeLabels = Object.keys(themeMap).sort((a,b) => themeMap[b] - themeMap[a]);
-        const themeValues = themeLabels.map(label => themeMap[label]);
-    
-        themeLabels.forEach(label => {
-            const prop = totalEval > 0 ? ((themeMap[label] / totalEval) * 100).toFixed(1) : 0;
-            themeList.innerHTML += `
+        themeList.innerHTML = Object.entries(themeAggr).map(([name, val]) => {
+            const percent = totalVal > 0 ? ((val / totalVal) * 100).toFixed(1) : 0;
+            return `
                 <tr>
-                    <td><strong>${label}</strong></td>
-                    <td style="text-align:right;">${prop}%<br><small>${themeMap[label].toLocaleString()}원</small></td>
-                </tr>`;
-        });
-
-        // 4. Chart.js 그래프 그리기 호출
-        drawPieChart('stockPieChart', stockLabels, stockValues, stockChart, (c) => stockChart = c);
-        drawPieChart('themePieChart', themeLabels, themeValues, themeChart, (c) => themeChart = c);
+                    <td style="font-weight:600; font-size:0.85rem;">${name}</td>
+                    <td style="text-align:right; padding: 6px 8px;">
+                        <span style="font-size:0.85rem;">${percent}%</span>
+                        <span style="color:#94a3b8; margin:0 3px; font-size:0.7rem;">→</span>
+                        <input type="number" class="target-input" placeholder="0" 
+                            onchange="saveTargetWeight('${name}', this.value)"
+                            value="${getTargetWeight(name)}"
+                            style="width:42px; padding:3px 5px; border:1px solid #e2e8f0; border-radius:4px; font-size:0.8rem; text-align:right; background:#f8fafc;">
+                        <span style="font-size:0.7rem; color:#9ca3af;">%</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     // [추가] 공통 차트 그리기 함수
