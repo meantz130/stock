@@ -7,7 +7,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --sidebar-bg: #1a1c23;
@@ -102,17 +101,17 @@
             background: var(--active-item);
             border: 1px dashed var(--accent); }
 
-        /* 내 정보 관리 모달 스타일 */
-        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
-        .modal-content { background: var(--white); margin: 5% auto; padding: 25px; border-radius: 20px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; position: relative; }
-        .close-modal { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: var(--text-light); }
-        .info-btn { background: #f1f5f9; color: var(--text-dark); border: 1px solid #e2e8f0; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; margin-left: 8px; }
-        .info-btn:hover { background: #e2e8f0; }
-
-        .portfolio-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.85rem; }
-        .portfolio-table th { background: #f8fafc; padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0; }
-        .portfolio-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; }
-        .chart-container { width: 100%; max-width: 300px; margin: 0 auto 20px auto; }
+        /* 내 정보 관리 섹션 스타일 */
+        #profile-section { display: none; }
+        .profile-card { background: var(--white); border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f0f0f0; }
+        .info-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .info-table th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: var(--text-light); font-size: 0.8rem; }
+        .info-table td { padding: 15px 12px; border-bottom: 1px solid #f8fafc; font-size: 0.9rem; }
+        .proportion-bar-container { width: 100%; background: #edf2f7; height: 8px; border-radius: 4px; margin-top: 8px; overflow: hidden; }
+        .proportion-bar { height: 100%; background: var(--accent); border-radius: 4px; }
+        .btn-profile-nav { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; margin-left: 8px; font-weight: bold; transition: 0.2s; }
+        .btn-profile-nav:hover { background: var(--accent); color: white; }
+        
     </style>
 </head>
 <body>
@@ -137,8 +136,8 @@
     
     <div class="user-info-area">
         <span id="user-display-name">환영합니다. 사용자님</span>
-        <button class="info-btn" onclick="openPortfolioModal()">내 정보 관리</button>
-    </div>  
+        <button class="btn-profile-nav" onclick="showProfile()">내 정보 관리</button>
+    </div>   
     <div class="total-asset-box">
         <span>총 자산 합계</span>
         <div id="total-asset-value">0원</div>
@@ -286,30 +285,32 @@
             <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:10px;">📝 메모</label>
             <textarea id="field-memo" rows="6" placeholder="자유로운 기록..." oninput="updateField('memo', this.value)"></textarea>
         </div>
-
-        <div id="portfolio-modal" class="modal">
-            <div class="modal-content">
-                <span class="close-modal" onclick="closePortfolioModal()">&times;</span>
-                <h3 style="margin-top:0;">📊 포트폴리오 비중 분석</h3>
-        
-                <div class="chart-container">
-                    <canvas id="portfolioChart"></canvas>
-                </div>
-    
-                <table class="portfolio-table">
-                    <thead>
-                        <tr>
-                            <th>종목명</th>
-                            <th>수량</th>
-                            <th>평가금액</th>
-                            <th>비중</th>
-                        </tr>
-                    </thead>
-                    <tbody id="portfolio-body"></tbody>
-                </table>
-            </div>
-        </div>
     </div>
+
+    <div id="profile-section">
+        <div class="top-bar">
+            <h2 style="margin:0; font-size:1.1rem; font-weight:900;">포트폴리오 분석</h2>
+        </div>
+    
+        <div class="profile-card">
+            <div style="margin-bottom: 20px;">
+                <label style="font-size:0.8rem; color:var(--text-light);">총 주식 평가 금액</label>
+                <div id="profile-total-stock" style="font-size:1.5rem; font-weight:800; color:var(--text-dark);">0원</div>
+            </div>
+
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>종목명</th>
+                        <th>보유수량</th>
+                        <th style="text-align:right;">평가금액 / 비중</th>
+                    </tr>
+                </thead>
+                <tbody id="profile-stock-list">
+                    </tbody>
+            </table>
+        </div>
+    </div>    
 </div>
 
 <script>
@@ -715,81 +716,68 @@
         document.getElementById('realized-price').value = '';
     }
 
-    let portfolioChart = null;
-
-    function openPortfolioModal() {
-        document.getElementById('portfolio-modal').style.display = 'block';
-        renderPortfolioData();
+    // 내 정보 관리 섹션 보기
+    function showProfile() {
+        currentId = null; // 에디터 비활성화
+        document.getElementById('main-dashboard').style.display = 'none';
+        document.getElementById('editor').style.display = 'none';
+        document.getElementById('profile-section').style.display = 'block';
+        if(window.innerWidth <= 768) toggleMenu();
+        renderProfileData();
     }
 
-    function closePortfolioModal() {
-        document.getElementById('portfolio-modal').style.display = 'none';
-    }
+    // 홈으로 갈 때 프로필 섹션 숨기기 위해 goHome 함수 수정
+    const originalGoHome = goHome;
+    goHome = function() {
+        document.getElementById('profile-section').style.display = 'none';
+        originalGoHome();
+    };
 
-    function renderPortfolioData() {
-        const body = document.getElementById('portfolio-body');
-        body.innerHTML = '';
+    function renderProfileData() {
+        const listContainer = document.getElementById('profile-stock-list');
+        listContainer.innerHTML = '';
 
-        // 1. 데이터 가공 및 평가금액 계산
-        let portfolio = items.map(item => {
+        // 1. 데이터 가공 (수량 > 0 인 것만, 평가금액 계산)
+        let profileData = items.map(item => {
             const count = Number(item.holdCount) || 0;
             const history = item.manualHistory ? Object.values(item.manualHistory).sort((a,b) => b.ts - a.ts) : [];
             const latestPrice = history.length > 0 ? Number(history[0].price) : (Number(item.holdAvg) || 0);
-            return {
-                title: item.title || "새 종목",
-                count: count,
-                evalAmount: count * latestPrice
-            };
-        }).filter(item => item.count > 0); // 수량이 있는 것만 표시
+            const evaluation = count * latestPrice;
+            return { ...item, evaluation, count };
+        }).filter(item => item.count > 0);
 
         // 2. 내림차순 정렬 (평가금액 기준)
-        portfolio.sort((a, b) => b.evalAmount - a.evalAmount);
+        profileData.sort((a, b) => b.evaluation - a.evaluation);
 
-        // 3. 총합 계산
-        const totalEval = portfolio.reduce((acc, cur) => acc + cur.evalAmount, 0);
+        // 3. 전체 합계 계산
+        const totalEval = profileData.reduce((acc, cur) => acc + cur.evaluation, 0);
+        document.getElementById('profile-total-stock').innerText = totalEval.toLocaleString() + "원";
 
-        // 4. 테이블 및 차트 데이터 준비
-        const labels = [];
-        const dataValues = [];
-    
-        portfolio.forEach(item => {
-            const ratio = totalEval > 0 ? ((item.evalAmount / totalEval) * 100).toFixed(1) : 0;
-            labels.push(item.title);
-            dataValues.push(item.evalAmount);
-
+        // 4. 리스트 렌더링
+        profileData.forEach(item => {
+            const proportion = totalEval > 0 ? ((item.evaluation / totalEval) * 100).toFixed(1) : 0;
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><b>${item.title}</b></td>
-                <td>${item.count.toLocaleString()}</td>
-                <td>${item.evalAmount.toLocaleString()}원</td>
-                <td style="color:var(--accent); font-weight:bold;">${ratio}%</td>
+                <td>
+                    <div style="font-weight:bold;">${item.title}</div>
+                    <div style="font-size:0.7rem; color:var(--text-light);">${item.description || ''}</div>
+                </td>
+                <td>${item.count.toLocaleString()}주</td>
+                <td style="text-align:right;">
+                    <div style="font-weight:bold;">${item.evaluation.toLocaleString()}원</div>
+                    <div style="font-size:0.75rem; color:var(--accent); font-weight:bold;">${proportion}%</div>
+                    <div class="proportion-bar-container">
+                        <div class="proportion-bar" style="width: ${proportion}%"></div>
+                    </div>
+                </td>
             `;
-            body.appendChild(tr);
+            listContainer.appendChild(tr);
         });
 
-        // 5. Chart.js 그리기
-        const ctx = document.getElementById('portfolioChart').getContext('2d');
-        if (portfolioChart) portfolioChart.destroy(); // 기존 차트 폐기 후 재생성
-
-        portfolioChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: dataValues,
-                    backgroundColor: ['#059669', '#2563eb', '#e11d48', '#f59e0b', '#8b5cf6', '#64748b'],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
-                }
-            }
-        });
+        if(profileData.length === 0) {
+            listContainer.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:40px; color:var(--text-light);">보유 중인 주식이 없습니다.</td></tr>';
+        }
     }
-
-    
 </script>
 </body>
 </html>
