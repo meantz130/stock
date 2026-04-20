@@ -119,14 +119,9 @@
         .chart-container canvas { max-height: 250px; margin: 0 auto; }
 
         /* 하단 정보 레이아웃 */
-        .info-wrapper { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
-        .info-box.theme-detail-box { flex: 1.5; min-width: 300px; }
-        .info-box.goal-setting-box { flex: 1; min-width: 250px; }
+        .info-wrapper { display: flex; gap: 20px; flex-wrap: wrap; }
+        .info-box { flex: 1; min-width: 300px; }
 
-        /* 목표 입력창 스타일 */
-        .goal-input-area { width: 100%; min-height: 200px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; font-size: 0.9rem; line-height: 1.6; color: var(--text-dark); resize: vertical; outline: none; transition: var(--transition); }
-        .goal-input-area:focus { border-color: var(--accent); background: var(--white); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
-        
         /* 1. 에디터 아이템 전체 간격 조정 (보유현황창과 띄우기) */
         .edit-item { margin-bottom: 25px; width: 100%; }
 
@@ -347,7 +342,7 @@
                     <tbody id="profile-stock-list"></tbody>
                 </table>
             </div>
-            <div class="info-box profile-card theme-detail-box">
+            <div class="info-box profile-card">
                 <h3 style="font-size:0.9rem;">테마 상세</h3>
                 <table class="info-table">
                     <thead>
@@ -355,22 +350,6 @@
                     </thead>
                     <tbody id="profile-theme-list"></tbody>
                 </table>
-            </div>
-
-            <div class="info-box profile-card goal-setting-box">
-                <h3 style="font-size:0.9rem; display: flex; justify-content: space-between;">
-                    🎯 향후 비중 조절 목표
-                    <span style="font-size: 0.7rem; color: var(--text-light); font-weight: normal;">자동 저장됨</span>
-                </h3>
-                <p style="font-size: 0.75rem; color: var(--text-light); margin-bottom: 12px;">
-                    축소하고 싶은 테마나 목표 비중을 자유롭게 기록하세요.
-                </p>
-                <textarea 
-                    id="future-goal-notes" 
-                    class="goal-input-area" 
-                    placeholder="예: 반도체 테마 30%까지 점진적 축소, 현금 비중 20% 확보 등..."
-                    oninput="saveFutureGoals(this.value)"
-                ></textarea>
             </div>
         </div>
     </div>  
@@ -394,16 +373,6 @@
     let items = [], realizedProfits = [], currentId = null, userCash = 0;
     let historyPage = 1, realizedPage = 1;
     const historyLimit = 8, realizedLimit = 10;
-
-    // 스크립트 중반 함수 정의 구역
-    function handleLogout() { 
-        auth.signOut().then(() => location.reload()); 
-    }
-
-    // 여기에 추가
-    function saveFutureGoals(text) {
-        db.ref('user_goals').set(text);
-    }
 
     // 추가: 달력 관련 변수
     let currentViewDate = new Date();
@@ -444,14 +413,6 @@
             if(cashInput) cashInput.value = userCash || "";
             calculateTotal();
         });
-
-        // 페이지 로드 시 저장된 목표 불러오기 (initApp 내 추가 권장)
-        db.ref('user_goals').on('value', (snap) => {
-            const goalText = snap.val() || "";
-            const goalInput = document.getElementById('future-goal-notes');
-            if (goalInput) goalInput.value = goalText;
-        });
-        
         db.ref('realized_profits').on('value', (snap) => {
             const data = snap.val();
             realizedProfits = data ? Object.keys(data).map(k => ({id:k, ...data[k]})).reverse() : [];
