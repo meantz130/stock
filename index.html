@@ -238,7 +238,7 @@
 
         <div class="edit-item" style="margin-top: 15px; margin-bottom: 25px;">
             <label>테마 / 카테고리</label>
-            <input type="text" id="edit-theme" placeholder="테마/카테고리 입력 후 엔터 (예: 반도체, AI)">
+            <input type="text" id="edit-theme" placeholder="입력 후 엔터 (예: 반도체, AI)">
         </div>
 
         <div class="card">
@@ -760,11 +760,17 @@
             // [엔터키 누르면 잠금]
             themeInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
-                    if (this.value.trim() !== "") {
-                        this.readOnly = true;            
-                        this.style.backgroundColor = "#f3f4f6"; // 연한 회색으로 잠금 표시
-                        this.style.cursor = "not-allowed";
-                        this.style.border = "1px solid #d1d5db";
+                    // 내용이 있든 없든(공란 포함) 무조건 잠금 처리
+                    this.readOnly = true;            
+                    this.style.backgroundColor = "#f3f4f6"; // 잠금 상태 배경색
+                    this.style.cursor = "not-allowed";
+                    this.style.border = "1px solid #d1d5db";
+                
+                    // 만약 공란으로 엔터를 쳤다면 사용자에게 알림 (선택 사항)
+                    if (this.value.trim() === "") {
+                        console.log("공란으로 테마가 잠금되었습니다.");
+                    } else {
+                        console.log("입력된 테마:", this.value);
                     }
                 }
             });
@@ -773,7 +779,7 @@
             themeInput.addEventListener('click', function() {
                 if (this.readOnly) {
                     this.readOnly = false;           
-                    this.style.backgroundColor = "#ffffff"; // 흰색으로 복구
+                    this.style.backgroundColor = "#ffffff"; // 입력 가능 배경색
                     this.style.cursor = "text";
                     this.style.border = "1px solid var(--accent)";
                     this.focus();
