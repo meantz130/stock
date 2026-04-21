@@ -548,10 +548,15 @@
 
         // 1. 즐겨찾기(isFavorite)가 true인 항목을 위로, 그 안에서 order 순으로 정렬
         const sortedItems = [...items].sort((a, b) => {
-            if (b.isFavorite !== a.isFavorite) {
-                return (b.isFavorite || false) - (a.isFavorite || false);
-            }
-            return (a.order || 0) - (b.order || 0);
+            // 1순위: 즐겨찾기 여부 (true가 위로)
+            const favA = a.isFavorite || false;
+            const favB = b.isFavorite || false;
+            if (favA !== favB) return favB - favA;
+
+            // 2순위: 순서(order) 값 (작은 숫자가 위로)
+            const orderA = (a.order === undefined || a.order === null) ? 0 : a.order;
+            const orderB = (b.order === undefined || b.order === null) ? 0 : b.order;
+            return orderA - orderB;
         });
 
         sortedItems.forEach((item) => {
@@ -944,23 +949,30 @@
         });
         setChartInstance(newChart);
     }
-    // 즐겨찾기 상태를 DB에 저장하고 화면을 즉시 갱신하는 함수
+    
     function toggleFavorite(id, currentStatus) {
         if(!id) return;
     
+        const newStatus = !currentStatus;
+
+        // 1. 서버(Firebase) 업데이트
         db.ref('stocks/' + id).update({
-            isFavorite: !currentStatus
+            isFavorite: newStatus
         })
         .then(() => {
-            // DB 업데이트 성공 후, 로컬의 items 배열 데이터도 함께 갱신해줍니다.
+            // 2. 로컬 데이터 배열(items) 즉시 동기화
             const itemIndex = items.findIndex(item => item.id === id);
             if (itemIndex > -1) {
-                items[itemIndex].isFavorite = !currentStatus;
+                items[itemIndex].isFavorite = newStatus;
             }
-            // 즉시 리스트를 다시 그려서 순서를 재배치합니다.
+        
+            // 3. 화면 갱신 (위의 수정된 정렬 로직이 적용됨)
             renderList();
         })
-        .catch(err => console.error("즐겨찾기 업데이트 실패:", err));
+        .catch(err => {
+            console.error("즐겨찾기 업데이트 실패:", err);
+            alert("상태 변경에 실패했습니다.");
+        });
     }
 </script>
 </body>
