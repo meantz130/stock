@@ -135,6 +135,14 @@
         .edit-item input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
         
         .theme-tag { display: inline-block; padding: 4px 10px; background: rgba(5, 150, 105, 0.1); color: #059669; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(5, 150, 105, 0.2); }
+
+        /* 즐겨찾기 별 스타일 */
+        .favorite-btn { cursor: pointer; font-size: 1.1rem; margin-right: 8px; transition: transform 0.2s ease; color: #4b5563; }
+        .favorite-btn.active { color: #fbbf24; }
+        .favorite-btn:hover { transform: scale(1.2); }
+
+        /* 별 아이콘과 종목명이 나란히 배치되도록 수정 */
+        .item-top { display: flex; align-items: center; font-weight: 800; font-size: 0.95rem; color: var(--white); }
     </style>
 </head>
 <body>
@@ -538,46 +546,59 @@
         const container = document.getElementById('item-list');
         container.innerHTML = '';
 
-        // 정렬 순서가 있다면 적용 (없다면 기본 순서)
-        const sortedItems = items.sort((a, b) => (a.order || 0) - (b.order || 0));
+        // 1. 즐겨찾기(isFavorite)가 true인 항목을 위로, 그 안에서 order 순으로 정렬
+        const sortedItems = [...items].sort((a, b) => {
+            if (b.isFavorite !== a.isFavorite) {
+                return (b.isFavorite || false) - (a.isFavorite || false);
+            }
+            return (a.order || 0) - (b.order || 0);
+        });
 
         sortedItems.forEach((item) => {
             const div = document.createElement('div');
             div.className = `list-item ${currentId === item.id ? 'selected-active' : ''}`;
-            div.setAttribute('draggable', true); // 드래그 가능 설정
-            div.dataset.id = item.id; // ID 저장
+            div.setAttribute('draggable', true);
+            div.dataset.id = item.id;
 
-             // 드래그 이벤트 리스너
+            // 드래그 이벤트 리스너
             div.addEventListener('dragstart', (e) => {
                 div.classList.add('dragging');
                 e.dataTransfer.effectAllowed = 'move';
             });
-                
+            
             div.addEventListener('dragend', () => {
                 div.classList.remove('dragging');
-                saveNewOrder(); // 드래그가 끝났을 때만 DB에 저장 (렉 방지 핵심)
+                saveNewOrder();
             });
 
             div.onclick = () => {
                 currentId = item.id; historyPage = 1;
-                document.getElementById('main-dashboard').style.display = 'none'; // 메인 대시보드 숨김
-                document.getElementById('profile-section').style.display = 'none'; // 내 정보 관리 섹션 숨김 (이 부분이 추가됨)
-                document.getElementById('editor').style.display = 'block';         // 에디터(상세창) 표시
-                
+                document.getElementById('main-dashboard').style.display = 'none';
+                document.getElementById('profile-section').style.display = 'none';
+                document.getElementById('editor').style.display = 'block';
+            
                 if(window.innerWidth <= 768) toggleMenu();
                 syncEditor();
                 renderList();
             };
-            
+        
             const avg = Number(item.holdAvg || 0).toLocaleString();
             const t3 = item.target3 ? Number(item.target3).toLocaleString() : '-';
             const count = item.holdCount || 0;
+
+            // 2. innerHTML 부분에 별 아이콘 추가 및 클릭 이벤트 할당
+            // stopPropagation을 걸어줘야 별을 누를 때 상세창이 열리지 않습니다.
             div.innerHTML = `
-                <div style="font-weight:bold; pointer-events:none;">
-                    ${item.title || "새 종목"} 
-                    <span style="font-size:0.75rem; color:var(--text-light); font-weight:normal; margin-left:4px;">(${count})</span>
+                <div style="font-weight:bold; display:flex; align-items:center;">
+                    <span class="favorite-btn" 
+                          style="color:${item.isFavorite ? '#fbbf24' : '#4b5563'}; margin-right:8px; cursor:pointer; font-size:1.1rem;"
+                          onclick="event.stopPropagation(); toggleFavorite('${item.id}', ${item.isFavorite || false})">
+                        ${item.isFavorite ? '★' : '☆'}
+                    </span>
+                    <span style="pointer-events:none;">${item.title || "새 종목"}</span>
+                    <span style="font-size:0.75rem; color:var(--text-light); font-weight:normal; margin-left:4px; pointer-events:none;">(${count})</span>
                 </div>
-                <div class="item-row" style="pointer-events:none;">
+                <div class="item-row" style="pointer-events:none; padding-left:24px;">
                     <div class="item-info-left">평단: ${avg}</div>
                     <div class="item-info-right">희망가: ${t3}</div>
                 </div>`;
@@ -587,7 +608,7 @@
         // 컨테이너 드래그 오버 이벤트
         container.addEventListener('dragover', e => {
             e.preventDefault();
-            if (dragTimer) return;
+            if (typeof dragTimer !== 'undefined' && dragTimer) return;
 
             dragTimer = requestAnimationFrame(() => {
                 const dragging = document.querySelector('.dragging');
@@ -922,6 +943,11 @@
             }
         });
         setChartInstance(newChart);
+    }
+    function toggleFavorite(id, currentStatus) {
+        db.ref('stocks/' + id).update({
+            isFavorite: !currentStatus
+        }).catch(err => console.error("즐겨찾기 업데이트 실패:", err));
     }
 </script>
 </body>
