@@ -130,11 +130,14 @@
     
         /* 3. 테마 입력창 자체 스타일 (기존 입력창과 분위기 통일) */
         .edit-item input[type="text"] { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: 'Pretendard', sans-serif; font-size: 0.9rem; background-color: var(--white); transition: var(--transition); outline: none; }
+        .theme-flex-row { display: flex; align-items: center; gap: 12px; }
+        #edit-theme { width: 200px !important; flex-shrink: 0; }
     
         /* 4. 클릭(포커스) 시 강조 효과 */
         .edit-item input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
         
         .theme-tag { display: inline-block; padding: 4px 10px; background: rgba(5, 150, 105, 0.1); color: #059669; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(5, 150, 105, 0.2); }
+        #theme-tag-display { margin-top: 0 !important; display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
 
         /* 즐겨찾기 별 스타일 */
         .favorite-btn { cursor: pointer; font-size: 1.1rem; margin-right: 8px; transition: transform 0.2s ease; color: #4b5563; }
@@ -249,8 +252,8 @@
 
         <div class="edit-item" style="margin-top: 15px; margin-bottom: 25px;">
             <label>테마 / 카테고리</label>
-            <input type="text" id="edit-theme" oninput="updateField('theme', this.value)" placeholder="예: 반도체, 2차전지">
-            <div id="theme-tag-display" class="theme-tag-container" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
+            <div class="theme-flex-row"> <input type="text" id="edit-theme" oninput="updateField('theme', this.value)" placeholder="예: 반도체, 2차전지">
+                <div id="theme-tag-display"></div> </div>
         </div>
 
         <div class="card">
