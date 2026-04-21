@@ -842,40 +842,49 @@
     }
 
     function renderProfile() {
+        // 1. 화면 전환 및 초기화
+        document.getElementById('main-dashboard').style.display = 'none';
+        document.getElementById('editor').style.display = 'none';
+        document.getElementById('profile-section').style.display = 'block';
+
         const stockListBody = document.getElementById('profile-stock-list');
         const themeListBody = document.getElementById('profile-theme-list');
         stockListBody.innerHTML = '';
         themeListBody.innerHTML = '';
 
-        // 1. 데이터 계산 (예수금 포함)
+        // 2. 데이터 구성 (예수금 포함)
         let stockData = items.map(item => ({
             name: item.title || '이름 없음',
             value: (Number(item.holdCount) || 0) * (Number(item.lastPrice) || 0)
         })).filter(s => s.value > 0);
 
-        // 예수금이 0보다 크면 목록에 추가
+        // 예수금 데이터 추가 (userCash 변수 사용)
         if (userCash > 0) {
             stockData.push({ name: '예수금 (현금)', value: userCash });
         }
 
         const totalAsset = stockData.reduce((sum, s) => sum + s.value, 0);
 
-        // 2. 종목별/예수금 상세 표 렌더링
+        // 3. 종목 상세 표 출력
         stockData.sort((a, b) => b.value - a.value).forEach(s => {
             const ratio = totalAsset > 0 ? ((s.value / totalAsset) * 100).toFixed(1) : 0;
             const tr = document.createElement('tr');
+            // 예수금인 경우 바(bar) 색상을 회색으로 차별화
+            const barColor = s.name.includes('예수금') ? '#94a3b8' : 'var(--accent)';
             tr.innerHTML = `
                 <td>${s.name}</td>
                 <td style="text-align:right;">
                     <div style="font-weight:bold;">${ratio}%</div>
                     <div style="font-size:0.7rem; color:var(--text-light);">${Math.floor(s.value).toLocaleString()}원</div>
-                    <div class="proportion-bar-container"><div class="proportion-bar" style="width:${ratio}%; ${s.name === '예수금 (현금)' ? 'background:#94a3b8;' : ''}"></div></div>
+                    <div class="proportion-bar-container">
+                        <div class="proportion-bar" style="width:${ratio}%; background:${barColor}"></div>
+                    </div>
                 </td>
             `;
             stockListBody.appendChild(tr);
         });
 
-        // 3. 테마별 비중 계산 (테마는 주식 자산 기준)
+        // 4. 테마별 비중 계산 (주식 자산 기준)
         let themeMap = {};
         items.forEach(item => {
             const val = (Number(item.holdCount) || 0) * (Number(item.lastPrice) || 0);
@@ -892,24 +901,35 @@
         themeData.forEach(([name, val]) => {
             const ratio = totalStockValue > 0 ? ((val / totalStockValue) * 100).toFixed(1) : 0;
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${name}</td><td style="text-align:right;"><div style="font-weight:bold;">${ratio}%</div><div class="proportion-bar-container"><div class="proportion-bar" style="width:${ratio}%"></div></div></td>`;
+            tr.innerHTML = `
+                <td>${name}</td>
+                <td style="text-align:right;">
+                    <div style="font-weight:bold;">${ratio}%</div>
+                    <div class="proportion-bar-container">
+                        <div class="proportion-bar" style="width:${ratio}%"></div>
+                    </div>
+                </td>
+            `;
             themeListBody.appendChild(tr);
         });
 
-        // 4. 차트 업데이트 (원형 그래프에 예수금 반영)
-        updatePieChart('stockPieChart', stockData.map(d => d.name), stockData.map(d => d.value));
-        updatePieChart('themePieChart', themeData.map(d => d[0]), themeData.map(d => d[1]));
+        // 5. 원형 그래프 업데이트 (차트 라이브러리 직접 조작)
+        // 종목별 차트 업데이트
+        renderPieChart('stockPieChart', stockData.map(d => d.name), stockData.map(d => d.value));
+        // 테마별 차트 업데이트
+        renderPieChart('themePieChart', themeData.map(d => d[0]), themeData.map(d => d[1]));
     }
 
-    // [추가] 공통 차트 그리기 함수
-    function drawPieChart(canvasId, labels, data, chartInstance, setChartInstance) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
+    // 차트를 그리는 보조 함수 (기존에 renderPieChart가 없다면 이 부분도 추가하세요)
+    function renderPieChart(canvasId, labels, data) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+    
+        // 기존 차트 객체가 있으면 파괴 후 재생성 (Chart.js 방식)
+        if (window[canvasId + 'Object']) {
+            window[canvasId + 'Object'].destroy();
+        }
 
-        if (chartInstance) chartInstance.destroy();
-
-        const newChart = new Chart(ctx, {
+        window[canvasId + 'Object'] = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: labels,
@@ -922,31 +942,18 @@
                         // 11~20: 파스텔 및 딥톤 혼합 (구분력 강화)
                         '#7B68EE', '#FFA07A', '#20B2AA', '#87CEFA', '#708090',
                         '#DA70D6', '#B0E0E6', '#F0E68C', '#6495ED', '#FF7F50'
-                    ],
-                    hoverOffset: 10,
-                    borderWidth: 1
+                        ],
+                    borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 10,
-                            font: { size: 10 },
-                            padding: 10
-                        }
-                    },
-                    tooltip: {
-                        enabled: true // 마우스 올렸을 때 이름과 수치 표시
-                    }
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
                 }
             }
         });
-        setChartInstance(newChart);
     }
     
     function toggleFavorite(id, currentStatus) {
