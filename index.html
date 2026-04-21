@@ -944,10 +944,23 @@
         });
         setChartInstance(newChart);
     }
+    // 즐겨찾기 상태를 DB에 저장하고 화면을 즉시 갱신하는 함수
     function toggleFavorite(id, currentStatus) {
+        if(!id) return;
+    
         db.ref('stocks/' + id).update({
             isFavorite: !currentStatus
-        }).catch(err => console.error("즐겨찾기 업데이트 실패:", err));
+        })
+        .then(() => {
+            // DB 업데이트 성공 후, 로컬의 items 배열 데이터도 함께 갱신해줍니다.
+            const itemIndex = items.findIndex(item => item.id === id);
+            if (itemIndex > -1) {
+                items[itemIndex].isFavorite = !currentStatus;
+            }
+            // 즉시 리스트를 다시 그려서 순서를 재배치합니다.
+            renderList();
+        })
+        .catch(err => console.error("즐겨찾기 업데이트 실패:", err));
     }
 </script>
 </body>
