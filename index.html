@@ -854,7 +854,7 @@
         // 보통 이 앱 구조에서는 userCash 변수를 직접 쓰거나 userData.cash 형식을 사용합니다.
         const currentCash = (typeof userCash !== 'undefined') ? Number(userCash) : 0;
 
-        let totalEval = 0;
+        let totalStockEval = 0; // 종목들의 합계만 먼저 계산할 변수
         let themeMap = {}; // 테마별 합계를 저장할 객체
     
         // 1. 데이터 가공 및 총 평가액 계산
