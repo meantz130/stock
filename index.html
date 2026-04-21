@@ -233,11 +233,16 @@
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <input type="text" id="item-title" oninput="updateField('title', this.value)" style="font-size:1.5rem; font-weight:800; width:70%;" placeholder="종목명">
                 <button onclick="deleteStock()" style="color:var(--danger); background:#fee2e2; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold;">삭제</button>
-             </div>
-             <input type="text" id="item-description" oninput="updateField('description', this.value)" 
-                 style="font-size:0.9rem; font-weight:400; color:var(--text-light); margin-top:5px; border-bottom:1px solid #eee;"
-                  placeholder="이 주식에 대한 간단한 설명을 입력하세요">
-         </div>
+            </div>
+            <textarea id="item-description" oninput="updateField('description', this.value)" 
+                  placeholder="이 주식에 대한 간단한 설명을 입력하세요" 
+                  style="background:#f1f5f9; padding:12px; border-radius:8px; height:80px; font-weight:400;"></textarea>
+            <div style="margin: 12px 0 5px 0; display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <input type="checkbox" id="item-folded" onchange="updateField('isFolded', this.checked); setTimeout(renderList, 150);" style="width:16px; height:16px; cursor:pointer;">
+                <label for="item-folded" style="font-size: 0.8rem; color: #475569; cursor: pointer; font-weight:600; margin:0;">이 종목 접어서 보관하기</label>
+            </div>
+            <div style="margin-top:20px; display:grid; grid-template-columns: 1fr 1fr; gap:15px;"></div>
+        </div>
 
         <div class="edit-item" style="margin-top: 15px; margin-bottom: 25px;">
             <label>테마 / 카테고리</label>
@@ -536,53 +541,63 @@
 
     function renderList() {
         const container = document.getElementById('item-list');
+        if(!container) return;
         container.innerHTML = '';
 
-        // 정렬 순서가 있다면 적용 (없다면 기본 순서)
-        const sortedItems = items.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-        sortedItems.forEach((item) => {
-            const div = document.createElement('div');
-            div.className = `list-item ${currentId === item.id ? 'selected-active' : ''}`;
-            div.setAttribute('draggable', true); // 드래그 가능 설정
-            div.dataset.id = item.id; // ID 저장
-
-             // 드래그 이벤트 리스너
-            div.addEventListener('dragstart', (e) => {
-                div.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-            });
-                
-            div.addEventListener('dragend', () => {
-                div.classList.remove('dragging');
-                saveNewOrder(); // 드래그가 끝났을 때만 DB에 저장 (렉 방지 핵심)
-            });
-
-            div.onclick = () => {
-                currentId = item.id; historyPage = 1;
-                document.getElementById('main-dashboard').style.display = 'none'; // 메인 대시보드 숨김
-                document.getElementById('profile-section').style.display = 'none'; // 내 정보 관리 섹션 숨김 (이 부분이 추가됨)
-                document.getElementById('editor').style.display = 'block';         // 에디터(상세창) 표시
-                
-                if(window.innerWidth <= 768) toggleMenu();
-                syncEditor();
-                renderList();
-            };
-            
-            const avg = Number(item.holdAvg || 0).toLocaleString();
-            const t3 = item.target3 ? Number(item.target3).toLocaleString() : '-';
-            const count = item.holdCount || 0;
-            div.innerHTML = `
-                <div style="font-weight:bold; pointer-events:none;">
-                    ${item.title || "새 종목"} 
-                    <span style="font-size:0.75rem; color:var(--text-light); font-weight:normal; margin-left:4px;">(${count})</span>
-                </div>
-                <div class="item-row" style="pointer-events:none;">
-                    <div class="item-info-left">평단: ${avg}</div>
-                    <div class="item-info-right">희망가: ${t3}</div>
-                </div>`;
-            container.appendChild(div);
+        // 1. 활성 종목 (보관되지 않은 것)
+        const activeItems = items.filter(i => !i.isFolded);
+        activeItems.forEach(item => {
+            container.appendChild(createItemNode(item));
         });
+
+        // 2. 보관된 종목 (접기 처리)
+        const foldedItems = items.filter(i => i.isFolded);
+        if (foldedItems.length > 0) {
+            const details = document.createElement('details');
+            details.className = 'folded-section';
+            const summary = document.createElement('summary');
+            summary.innerHTML = `<span>보관된 종목 (${foldedItems.length})</span>`;
+            details.appendChild(summary);
+
+            foldedItems.forEach(item => {
+                details.appendChild(createItemNode(item));
+            });
+            container.appendChild(details);
+        }
+    }
+
+    // 아이템 생성을 담당하는 별도 함수 (기존 UI 로직 포함)
+    function createItemNode(item) {
+        const div = document.createElement('div');
+        div.className = 'list-item' + (item.id === currentId ? ' selected-active' : '');
+        div.draggable = true;
+    
+        div.addEventListener('dragstart', (e) => { div.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+        div.addEventListener('dragend', () => { div.classList.remove('dragging'); saveNewOrder(); });
+        div.onclick = () => { 
+            currentId = item.id; 
+            document.getElementById('main-dashboard').style.display = 'none';
+            document.getElementById('profile-section').style.display = 'none';
+            document.getElementById('editor').style.display = 'block';
+            syncEditor(); 
+            renderList(); 
+        };
+
+        const avg = Number(item.holdAvg || 0).toLocaleString();
+        const t3 = item.target3 ? Number(item.target3).toLocaleString() : '-';
+        const count = item.holdCount || 0;
+
+        div.innerHTML = `
+            <div style="font-weight:bold; pointer-events:none;">
+                ${item.title || "새 종목"} 
+                <span style="font-size:0.75rem; color:var(--text-light); font-weight:normal; margin-left:4px;">(${count})</span>
+            </div>
+            <div class="item-row" style="pointer-events:none;">
+                <div class="item-info-left">평단: ${avg}</div>
+                <div class="item-info-right">희망가: ${t3}</div>
+            </div>`;
+        return div;
+    }
 
         // 컨테이너 드래그 오버 이벤트
         container.addEventListener('dragover', e => {
@@ -692,6 +707,8 @@
         document.getElementById('item-title').value = item.title || "";
         document.getElementById('item-description').value = item.description || ""; 
         document.getElementById('edit-theme').value = item.theme || "";
+
+        document.getElementById('item-folded').checked = !!item.isFolded;
 
         // [핵심 추가] 테마/카테고리 입력 시 바로 아래에 태그 형태로 표시
         const tagContainer = document.getElementById('theme-tag-display');
