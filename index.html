@@ -316,11 +316,6 @@
         
         <div class="card">
             <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">📅 종가 기록</label>
-    
-            <div style="width: 100%; height: 220px; margin-bottom: 20px; background: #fff; border-radius: 10px; padding: 10px; box-sizing: border-box; border: 1px solid #f1f5f9;">
-                <canvas id="closePriceLineChart"></canvas>
-            </div>
-
             <input type="number" id="manual-close-input" placeholder="금액 입력 후 Enter" onkeydown="handleManualSave(event)" style="border-bottom:2px solid #f1f5f9; margin-bottom:10px;">
             <div id="history-list"></div>
             <div class="pagination-ctrl" id="history-pager"></div>
@@ -436,62 +431,6 @@
             renderCalendar(); // 추가: 데이터 갱신 시 달력도 갱신
             calculateMonthlySummary(); // 추가: 이달의 수익 계산
         });
-    }
-
-    // 전역 변수 (스크립트 상단 let items = [] 근처에 두세요)
-    let closePriceChart = null;
-
-    function renderClosePriceChart(history) {
-        const canvas = document.getElementById('closePriceLineChart');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-
-        // 기록이 없으면 기존 차트 파괴 후 종료
-        if (!history || Object.keys(history).length === 0) {
-            if (closePriceChart) { closePriceChart.destroy(); closePriceChart = null; }
-            return;
-        }
-
-        // 날짜순 정렬 (최근 10개)
-        const sortedData = Object.entries(history)
-            .sort((a, b) => new Date(a[0]) - new Date(b[0]))
-            .slice(-10);
-
-        const labels = sortedData.map(d => d[0].split('-').slice(1).join('/')); // MM/DD 형식
-        const prices = sortedData.map(d => d[1]);
-
-        if (closePriceChart) {
-            closePriceChart.data.labels = labels;
-            closePriceChart.data.datasets[0].data = prices;
-            closePriceChart.update();
-        } else {
-            closePriceChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '종가',
-                        data: prices,
-                        borderColor: '#059669',
-                        backgroundColor: 'rgba(5, 150, 105, 0.05)',
-                        fill: true,
-                        tension: 0.3,
-                        borderWidth: 2,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#059669'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: false, grid: { color: '#f1f5f9' } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-        }
     }
 
     function toggleMenu() {
@@ -832,26 +771,13 @@
     }
 
     function handleManualSave(e) {
-        if (e.key === 'Enter') {
-            const val = e.target.value;
-            if (!val || !currentId) return;
-
-            const dateKey = new Date().toISOString().split('T')[0];
-            const item = items.find(i => i.id === currentId);
-        
-            if (!item.history) item.history = {};
-            item.history[dateKey] = Number(val);
-
-            db.ref('stocks/' + currentId + '/history').set(item.history).then(() => {
-                e.target.value = "";
-                renderHistory(); // 리스트 갱신
-            
-                // ✅ [이곳에 추가] 데이터 저장 후 차트도 즉시 업데이트
-                renderClosePriceChart(item.history); 
-            });
+        if(e.key === 'Enter' && e.target.value && currentId) {
+            const now = new Date();
+            const dateStr = `${String(now.getFullYear()).slice(-2)}.${now.getMonth()+1}.${now.getDate()}`;
+            db.ref(`stocks/${currentId}/manualHistory`).push({ date: dateStr, price: Number(e.target.value), ts: Date.now() });
+            e.target.value = '';
         }
     }
-    
     function updateField(f, v) { if(currentId) db.ref(`stocks/${currentId}`).update({ [f]: v }); }
     function updateCash(v) { db.ref('user_cash').set(Number(v)); }
     function deleteHistory(k) { if(confirm("삭제?")) db.ref(`stocks/${currentId}/manualHistory/${k}`).remove(); }
@@ -908,16 +834,12 @@
         document.getElementById('edit-holdAvg').value = item.holdAvg || 0;
         document.getElementById('edit-targetPrice').value = item.targetPrice || 0;
         document.getElementById('edit-description').value = item.description || "";
-        document.getElementById('field-memo').value = item.memo || "";
     
         // [새로 추가된 부분] 테마 값 불러오기
         document.getElementById('edit-theme').value = item.theme || "";
 
-        renderClosePriceChart(item.history);
-
         // 화면 전환
         document.getElementById('main-dashboard').style.display = 'none';
-        document.getElementById('profile-section').style.display = 'none';
         document.getElementById('editor').style.display = 'block';
         renderHistory();
     }
