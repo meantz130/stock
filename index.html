@@ -313,21 +313,21 @@
                 </div>
             </div>
         </div>
-        
-        <div class="card">
-            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">📅 종가 기록</label>
-            <input type="number" id="manual-close-input" placeholder="금액 입력 후 Enter" onkeydown="handleManualSave(event)" style="border-bottom:2px solid #f1f5f9; margin-bottom:10px;">
-            <div id="history-list"></div>
-            <div class="pagination-ctrl" id="history-pager"></div>
-        </div>
 
         <div class="card">
-            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">📅 종가 기록</label>
+            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">📅 종가 기록 차트</label>
     
             <div style="width: 100%; height: 200px; margin-bottom: 20px;">
                 <canvas id="closePriceLineChart"></canvas>
             </div>
 
+            <input type="number" id="manual-close-input" placeholder="금액 입력 후 Enter" onkeydown="handleManualSave(event)" style="border-bottom:2px solid #f1f5f9; margin-bottom:10px;">
+            <div id="history-list"></div>
+            <div class="pagination-ctrl" id="history-pager"></div>
+        </div>
+        
+        <div class="card">
+            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">📅 종가 기록</label>
             <input type="number" id="manual-close-input" placeholder="금액 입력 후 Enter" onkeydown="handleManualSave(event)" style="border-bottom:2px solid #f1f5f9; margin-bottom:10px;">
             <div id="history-list"></div>
             <div class="pagination-ctrl" id="history-pager"></div>
