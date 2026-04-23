@@ -322,6 +322,18 @@
         </div>
 
         <div class="card">
+            <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:12px;">📅 종가 기록</label>
+    
+            <div style="width: 100%; height: 200px; margin-bottom: 20px;">
+                <canvas id="closePriceLineChart"></canvas>
+            </div>
+
+            <input type="number" id="manual-close-input" placeholder="금액 입력 후 Enter" onkeydown="handleManualSave(event)" style="border-bottom:2px solid #f1f5f9; margin-bottom:10px;">
+            <div id="history-list"></div>
+            <div class="pagination-ctrl" id="history-pager"></div>
+        </div>
+
+        <div class="card">
             <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:10px;">📝 메모</label>
             <textarea id="field-memo" rows="6" placeholder="자유로운 기록..." oninput="updateField('memo', this.value)"></textarea>
         </div>
@@ -432,6 +444,69 @@
             calculateMonthlySummary(); // 추가: 이달의 수익 계산
         });
     }
+
+    // 1. 전역 변수 영역에 추가
+    let closePriceChart = null;
+
+    // 2. 종가 차트를 그리는 함수 추가
+    function renderClosePriceChart(history) {
+        const canvas = document.getElementById('closePriceLineChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+    
+        // 데이터가 없으면 초기화
+        if (!history || Object.keys(history).length === 0) {
+            if(closePriceChart) closePriceChart.destroy();
+            closePriceChart = null;
+            return;
+        }
+
+        // 데이터를 날짜순(오름차순)으로 정렬하여 최근 10개 추출
+        const sortedData = Object.entries(history)
+            .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+            .slice(-10);
+
+        const labels = sortedData.map(item => {
+            const d = new Date(item[0]);
+            return `${d.getMonth() + 1}/${d.getDate()}`;
+        });
+        const prices = sortedData.map(item => item[1]);
+
+        if (closePriceChart) {
+            closePriceChart.data.labels = labels;
+            closePriceChart.data.datasets[0].data = prices;
+            closePriceChart.update();
+        } else {
+            closePriceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '종가',
+                        data: prices,
+                        borderColor: '#059669', // 테마 accent 컬러 사용
+                        backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    }
+
+    // 3. 기존 renderHistoryList() 함수 마지막에 차트 렌더링 호출 추가
+    // function renderHistoryList() { ... 기존 코드 ... renderClosePriceChart(item.history); }  
 
     function toggleMenu() {
         document.getElementById('sidebar').classList.toggle('open');
