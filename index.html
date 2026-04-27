@@ -720,20 +720,13 @@
         document.getElementById('profit-amount').style.color = diff >= 0 ? 'var(--danger)' : 'var(--target)';
         document.getElementById('profit-percent').style.color = diff >= 0 ? 'var(--danger)' : 'var(--target)';
 
-        // --- [기능 추가] 투자금 및 평가금 계산 로직 (여기서부터 복사해서 붙여넣기) ---
-        const currentCnt = Number(document.getElementById('hold-count').value) || 0;
-        const currentAvg = Number(document.getElementById('hold-avg').value) || 0;
-        const investTotal = currentCnt * currentAvg;
-
-        const profitTxt = document.getElementById('profit-amount').innerText.replace(/[^0-9.-]/g, '');
-        const profitVal = Number(profitTxt) || 0;
-
-        const evalTotal = investTotal + profitVal;
-
+        // --- [기능 추가] 투자금 및 평가금 표기 (훨씬 간결해짐) ---
         const investEl = document.getElementById('invest-amount');
         const evalEl = document.getElementById('eval-amount');
-        if (investEl) investEl.innerText = Math.round(investTotal).toLocaleString();
-        if (evalEl) evalEl.innerText = Math.round(evalTotal).toLocaleString();
+        
+        // 위에서 이미 완벽히 계산된 buyTotal과 currentEval을 바로 넣어줍니다.
+        if (investEl) investEl.innerText = Math.round(buyTotal).toLocaleString();
+        if (evalEl) evalEl.innerText = Math.round(currentEval).toLocaleString();
 
         // 필드 값 동기화
         document.getElementById('item-title').value = item.title || "";
