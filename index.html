@@ -772,10 +772,29 @@
         hList.innerHTML = '';
         const totalPages = Math.ceil(arr.length / historyLimit) || 1;
         const paged = arr.slice((historyPage-1)*historyLimit, historyPage*historyLimit);
-        paged.forEach(h => {
+        paged.forEach((h, index) => {
+            // --- [기능 추가] 전일 대비 등락률 계산 ---
+            // 전체 배열(arr) 기준의 실제 위치(인덱스)를 찾아 다음 요소(과거 기록)를 가져옵니다.
+            const globalIndex = (historyPage - 1) * historyLimit + index;
+            const prevRecord = arr[globalIndex + 1]; 
+
+            let percentHtml = "";
+            if (prevRecord && Number(prevRecord.price) > 0) {
+                const currentPrice = Number(h.price);
+                const prevPrice = Number(prevRecord.price);
+                const diff = currentPrice - prevPrice;
+                const percent = (diff / prevPrice) * 100;
+
+                const sign = diff > 0 ? "+" : "";
+                // 상승은 빨간색(--danger), 하락은 파란색(--target), 보합은 기본색
+                const color = diff > 0 ? "var(--danger)" : (diff < 0 ? "var(--target)" : "inherit");
+
+                percentHtml = `<span style="color: ${color}; font-size: 0.85em; margin-left: 8px; font-weight: 600;">(${sign}${percent.toFixed(2)}%)</span>`;
+            }
+            
             const div = document.createElement('div');
             div.className = 'history-item';
-            div.innerHTML = `<span>${h.date}</span> <b>${h.price.toLocaleString()}원</b> <span onclick="deleteHistory('${h.k}')" style="cursor:pointer; opacity:0.2;">×</span>`;
+            div.innerHTML = `<span>${h.date}</span> <b>${Number(h.price).toLocaleString()}원${percentHtml}</b> <span onclick="deleteHistory('${h.k}')" style="cursor:pointer; opacity:0.2;">×</span>`;
             hList.appendChild(div);
         });
         pager.innerHTML = `<button onclick="historyPage=Math.max(1, historyPage-1); syncEditor();">이전</button> <span>${historyPage}/${totalPages}</span> <button onclick="historyPage=Math.min(${totalPages}, historyPage+1); syncEditor();">다음</button>`;
