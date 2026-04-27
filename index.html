@@ -263,6 +263,9 @@
                 <div class="price-box"><label style="font-size:0.7rem; color:var(--text-light);">평단가</label><input type="number" id="hold-avg" oninput="updateField('holdAvg', this.value)"></div>
             </div>
             <div style="margin-top:15px; text-align:right;">
+                <div style="font-size:0.8rem; color:var(--text-light); margin-bottom:5px;">
+                    투자금: <span id="invest-amount">0</span>원 | 평가금: <span id="eval-amount">0</span>원
+                </div>
                 <span id="profit-percent" style="font-size:1.2rem; font-weight:800;">0.00%</span>
                 <div id="profit-amount" style="font-size:0.9rem; font-weight:700;">0원</div>
             </div>
@@ -716,6 +719,21 @@
         document.getElementById('profit-percent').innerText = `${percent.toFixed(2)}%`;
         document.getElementById('profit-amount').style.color = diff >= 0 ? 'var(--danger)' : 'var(--target)';
         document.getElementById('profit-percent').style.color = diff >= 0 ? 'var(--danger)' : 'var(--target)';
+
+        // --- [기능 추가] 투자금 및 평가금 계산 로직 (여기서부터 복사해서 붙여넣기) ---
+        const currentCnt = Number(document.getElementById('hold-count').value) || 0;
+        const currentAvg = Number(document.getElementById('hold-avg').value) || 0;
+        const investTotal = currentCnt * currentAvg;
+
+        const profitTxt = document.getElementById('profit-amount').innerText.replace(/[^0-9.-]/g, '');
+        const profitVal = Number(profitTxt) || 0;
+
+        const evalTotal = investTotal + profitVal;
+
+        const investEl = document.getElementById('invest-amount');
+        const evalEl = document.getElementById('eval-amount');
+        if (investEl) investEl.innerText = Math.round(investTotal).toLocaleString();
+        if (evalEl) evalEl.innerText = Math.round(evalTotal).toLocaleString();
 
         // 필드 값 동기화
         document.getElementById('item-title').value = item.title || "";
