@@ -136,8 +136,10 @@
         /* 4. 클릭(포커스) 시 강조 효과 */
         .edit-item input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
         
-        .theme-tag { display: inline-block; padding: 4px 10px; background: rgba(5, 150, 105, 0.1); color: #059669; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(5, 150, 105, 0.2); }
-        #theme-tag-display { margin-top: 0 !important; display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+        .theme-tag { display: inline-flex; align-items: center; padding: 4px 10px; background: rgba(5, 150, 105, 0.1); color: #059669; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(5, 150, 105, 0.2); gap: 6px; }
+        .theme-tag-del { cursor: pointer; color: var(--danger); font-size: 1rem; line-height: 1; opacity: 0.7; }
+        .theme-tag-del:hover { opacity: 1; }
+        #theme-tag-display { margin-top: 0 !important; display: flex; flex-wrap: wrap; gap: 6px; flex: 1; align-items: center; }
 
         /* 즐겨찾기 별 스타일 */
         .favorite-btn { cursor: pointer; font-size: 1.1rem; margin-right: 8px; transition: transform 0.2s ease; color: #4b5563; }
@@ -269,8 +271,10 @@
 
         <div class="edit-item" style="margin-top: 15px; margin-bottom: 25px;">
             <label>테마 / 카테고리</label>
-            <div class="theme-flex-row"> <input type="text" id="edit-theme" oninput="updateField('theme', this.value)" placeholder="예: 반도체, 2차전지">
-                <div id="theme-tag-display"></div> </div>
+            <div class="theme-flex-row">
+                <input type="text" id="edit-theme" placeholder="테마 입력 후 Enter" onkeydown="handleThemeInput(event)">
+                <div id="theme-tag-display"></div>
+            </div>
         </div>
 
         <div class="card">
@@ -812,17 +816,19 @@
         if (tagContainer) {
             tagContainer.innerHTML = '';
             if(item.theme) {
-                // 쉼표로 구분된 테마들을 각각 태그로 생성
                 item.theme.split(',').forEach(t => {
-                    if(t.trim()) {
+                    const cleanTheme = t.trim();
+                    if(cleanTheme) {
                         const span = document.createElement('span');
                         span.className = 'theme-tag';
-                        span.innerText = t.trim();
+                        // 삭제(x) 버튼과 삭제 이벤트 추가
+                        span.innerHTML = `${cleanTheme} <span class="theme-tag-del" onclick="removeThemeTag('${cleanTheme}')">×</span>`;
                         tagContainer.appendChild(span);
                     }
                 });
             }
         }
+        document.getElementById('edit-theme').value = ""; // 태그 형태로 관리하므로 입력창은 항상 비워둠
 
         document.getElementById('hold-count').value = item.holdCount || "";
         document.getElementById('hold-avg').value = item.holdAvg || "";
@@ -838,6 +844,37 @@
         document.getElementById('field-memo').value = item.memo || "";
     
         renderHistory(historyArr);
+    }
+
+    // 엔터키 입력 시 테마 태그 추가
+    function handleThemeInput(e) {
+        if ((e.key === 'Enter' || e.key === ',') && e.target.value.trim() && currentId) {
+            e.preventDefault(); 
+            const newTheme = e.target.value.trim().replace(/,/g, ''); // 콤마 제거
+            const item = items.find(i => i.id === currentId);
+            
+            // 기존 테마들을 배열로 변환
+            let currentThemes = item.theme ? item.theme.split(',').map(t => t.trim()).filter(t => t) : [];
+            
+            // 중복 방지 후 추가
+            if (!currentThemes.includes(newTheme)) {
+                currentThemes.push(newTheme);
+                updateField('theme', currentThemes.join(',')); // 콤마로 연결하여 DB 저장
+            }
+            e.target.value = ''; // 입력창 비우기
+        }
+    }
+
+    // 테마 태그 삭제
+    function removeThemeTag(themeToRemove) {
+        if (!currentId) return;
+        const item = items.find(i => i.id === currentId);
+        if (!item || !item.theme) return;
+        
+        let currentThemes = item.theme.split(',').map(t => t.trim()).filter(t => t);
+        currentThemes = currentThemes.filter(t => t !== themeToRemove); // 해당 태그 제거
+        
+        updateField('theme', currentThemes.join(','));
     }
 
     function renderHistory(arr) {
@@ -971,14 +1008,19 @@
             const latestPrice = history.length > 0 ? Number(history[0].price) : (Number(item.holdAvg) || 0);
             const evaluation = count * latestPrice;
         
-            // 테마 추출 (여러 개일 경우 첫 번째 것을 주 테마로 사용)
-            const theme = item.theme ? item.theme.split(',')[0].trim() : "미분류";
+            // 여러 테마를 배열로 추출
+            let themeArr = item.theme ? item.theme.split(',').map(t => t.trim()).filter(t => t) : [];
+            if (themeArr.length === 0) themeArr = ["미분류"];
 
             if(evaluation > 0) {
                 totalStockEval += evaluation;
-                themeMap[theme] = (themeMap[theme] || 0) + evaluation;
+                // 하나의 종목에 여러 테마가 겹칠 경우, 비율 왜곡을 막기 위해 1/n로 나누어 배분
+                const splitEval = evaluation / themeArr.length;
+                themeArr.forEach(t => {
+                    themeMap[t] = (themeMap[t] || 0) + splitEval;
+                });
             }
-            return { ...item, evaluation, count, theme };
+            return { ...item, evaluation, count, theme: themeArr.join(', ') };
         }).filter(item => item.count > 0).sort((a, b) => b.evaluation - a.evaluation);
 
         // 전체 자산 계산 (종목 총액 + 예수금)
