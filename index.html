@@ -217,7 +217,19 @@
         </div>
 
         <div class="card">
-            <label style="font-size:0.8rem; font-weight:800; display:block; margin-bottom:10px;">📊 보유 주식 현황</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <label style="font-size:0.8rem; font-weight:800; display:flex; align-items:center; cursor:pointer; margin:0;" onclick="toggleDashboardHoldings()">
+                    <span id="holding-toggle-icon" style="margin-right:5px; transition: transform 0.3s; display:inline-block;">▼</span> 📊 보유 주식 현황
+                </label>
+                <select id="holding-sort-select" onchange="changeDashboardSort(this.value)" style="font-size:0.75rem; padding:4px 8px; border-radius:6px; border:1px solid #cbd5e1; outline:none; background:white; cursor:pointer;">
+                    <option value="profitRateDesc">수익률 높은순</option>
+                    <option value="profitRateAsc">수익률 낮은순</option>
+                    <option value="evalDesc">평가금 높은순</option>
+                    <option value="investDesc">투자금 높은순</option>
+                    <option value="nameAsc">이름 오름차순</option>
+                    <option value="nameDesc">이름 내림차순</option>
+                </select>
+            </div>
             <div id="dashboard-holding-list">
                 <!-- 동적으로 데이터가 추가될 영역 -->
             </div>
@@ -424,6 +436,31 @@
     let items = [], realizedProfits = [], currentId = null, userCash = 0;
     let historyPage = 1, realizedPage = 1;
     const historyLimit = 8, realizedLimit = 10;
+
+    // 보유 주식 현황 상태 변수
+    let dashboardSortMethod = 'profitRateDesc'; // 기본 정렬: 수익률 높은순
+    let isDashboardHoldingsExpanded = true;     // 기본 상태: 펼쳐짐
+
+    // 접기/펴기 기능
+    function toggleDashboardHoldings() {
+        isDashboardHoldingsExpanded = !isDashboardHoldingsExpanded;
+        const container = document.getElementById('dashboard-holding-list');
+        const icon = document.getElementById('holding-toggle-icon');
+
+        if (isDashboardHoldingsExpanded) {
+            container.style.display = 'block';
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            container.style.display = 'none';
+            icon.style.transform = 'rotate(-90deg)';
+        }
+    }
+
+    // 정렬 변경 기능
+    function changeDashboardSort(method) {
+        dashboardSortMethod = method;
+        renderDashboardHoldings(); // 정렬 기준이 바뀌면 즉시 다시 그리기
+    }
 
     // 전역 변수 추가 (기존 변수 선언부 근처에 작성)
     let isPeriodSearchActive = false;
@@ -794,20 +831,17 @@
         if(pager) pager.innerHTML = `<button onclick="realizedPage=Math.max(1, realizedPage-1); renderRealizedList();">이전</button> <span>${realizedPage}/${totalPages}</span> <button onclick="realizedPage=Math.min(${totalPages}, realizedPage+1); renderRealizedList();">다음</button>`;
     }
 
+    // 메인 화면에 보유 주식 현황 렌더링 (정렬 및 접기 적용)
     function renderDashboardHoldings() {
         const container = document.getElementById('dashboard-holding-list');
         if (!container) return;
         container.innerHTML = '';
 
-         // 수량이 1 이상인 종목만 필터링
-        const heldItems = items.filter(item => (Number(item.holdCount) || 0) >= 1);
+        // 접기 상태 적용 (데이터가 갱신될 때 펴지는 것 방지)
+        container.style.display = isDashboardHoldingsExpanded ? 'block' : 'none';
 
-        if (heldItems.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-light); font-size:0.8rem;">현재 보유 중인 주식이 없습니다.</div>';
-            return;
-        }
-
-        heldItems.forEach(item => {
+        // 1. 수량이 1 이상인 종목 필터링 및 데이터 사전 계산
+        let heldItems = items.filter(item => (Number(item.holdCount) || 0) >= 1).map(item => {
             const count = Number(item.holdCount) || 0;
             const avg = Number(item.holdAvg) || 0;
             
@@ -818,29 +852,53 @@
             const currentEval = count * latestPrice;
             const diff = currentEval - buyTotal;
             const percent = buyTotal > 0 ? (diff / buyTotal) * 100 : 0;
+            const title = item.title || "이름없음";
+            
+            return { ...item, count, buyTotal, currentEval, diff, percent, title };
+        });
 
-            const diffColor = diff >= 0 ? 'var(--danger)' : 'var(--target)';
-            const sign = diff > 0 ? '+' : '';
+        if (heldItems.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-light); font-size:0.8rem;">현재 보유 중인 주식이 없습니다.</div>';
+            return;
+        }
+
+        // 2. 선택된 정렬 기준에 따라 배열 정렬
+        heldItems.sort((a, b) => {
+            switch(dashboardSortMethod) {
+                case 'profitRateDesc': return b.percent - a.percent; // 수익률 높은순
+                case 'profitRateAsc': return a.percent - b.percent;  // 수익률 낮은순
+                case 'evalDesc': return b.currentEval - a.currentEval; // 평가금 높은순
+                case 'investDesc': return b.buyTotal - a.buyTotal;   // 투자금 높은순
+                case 'nameAsc': return a.title.localeCompare(b.title, 'ko-KR'); // 이름 가나다순
+                case 'nameDesc': return b.title.localeCompare(a.title, 'ko-KR'); // 이름 역순
+                default: return b.percent - a.percent;
+            }
+        });
+
+        // 3. 정렬된 데이터를 화면에 출력
+        heldItems.forEach(item => {
+            const diffColor = item.diff >= 0 ? 'var(--danger)' : 'var(--target)';
+            const sign = item.diff > 0 ? '+' : '';
 
             const div = document.createElement('div');
             div.className = 'holding-summary-item';
             div.innerHTML = `
                 <div class="holding-summary-top">
                     <div>
-                        <span class="holding-summary-title">${item.title || "이름없음"}</span>
-                        <span class="holding-summary-count">(${count}주)</span>
+                        <span class="holding-summary-title">${item.title}</span>
+                        <span class="holding-summary-count">(${item.count}주)</span>
                     </div>
                     <div class="holding-summary-profit" style="color: ${diffColor};">
-                        <span style="font-weight: 800; font-size: 1rem;">${sign}${percent.toFixed(2)}%</span>
+                        <span style="font-weight: 800; font-size: 1rem;">${sign}${item.percent.toFixed(2)}%</span>
                     </div>
                 </div>
                 <div class="holding-summary-bottom">
                     <div class="holding-summary-detail">
-                        <div>투자금: ${Math.round(buyTotal).toLocaleString()}원</div>
-                        <div>평가금: ${Math.round(currentEval).toLocaleString()}원</div>
+                        <div>투자금: ${Math.round(item.buyTotal).toLocaleString()}원</div>
+                        <div>평가금: ${Math.round(item.currentEval).toLocaleString()}원</div>
                     </div>
                     <div class="holding-summary-profit" style="color: ${diffColor}; font-weight: 700; font-size: 0.9rem;">
-                        ${sign}${Math.floor(diff).toLocaleString()}원
+                        ${sign}${Math.floor(item.diff).toLocaleString()}원
                     </div>
                 </div>
             `;
