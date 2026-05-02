@@ -213,6 +213,23 @@
                 <button onclick="addRealizedProfit()" style="background:var(--accent); color:white; border:none; padding:0 15px; border-radius:8px; cursor:pointer;">기록</button>
             </div>
 
+            <div style="background:#f8fafc; padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid #e2e8f0;">
+                <label style="font-size:0.75rem; font-weight:800; display:block; margin-bottom:8px;">📅 기간 조회</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="date" id="search-start-date" style="background:white; padding:8px; border:1px solid #cbd5e1; border-radius:6px; flex:1; font-size:0.8rem; box-sizing: border-box;">
+                    <span style="color:var(--text-light); font-weight:bold;">~</span>
+                    <input type="date" id="search-end-date" style="background:white; padding:8px; border:1px solid #cbd5e1; border-radius:6px; flex:1; font-size:0.8rem; box-sizing: border-box;">
+                    <button onclick="searchProfitsByPeriod()" style="background:#334155; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:bold;">조회</button>
+                </div>
+
+                <div id="period-summary" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed #cbd5e1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.8rem; color:var(--text-light);">선택 기간 수익금:</span>
+                        <span id="period-profit-sum" style="font-size:1rem; font-weight:800;">0원</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="monthly-summary">
                 <div class="summary-item">
                     <span class="summary-label">이달의 수익금</span>
@@ -387,6 +404,53 @@
     let items = [], realizedProfits = [], currentId = null, userCash = 0;
     let historyPage = 1, realizedPage = 1;
     const historyLimit = 8, realizedLimit = 10;
+
+    // 전역 변수 추가 (기존 변수 선언부 근처에 작성)
+    let isPeriodSearchActive = false;
+    let periodFilteredData = [];
+
+    // 기간 조회 실행 함수 추가
+    function searchProfitsByPeriod() {
+        const startVal = document.getElementById('search-start-date').value;
+        const endVal = document.getElementById('search-end-date').value;
+
+        if (!startVal || !endVal) {
+            alert("시작일과 종료일을 모두 선택해주세요.");
+            return;
+        }
+
+        const startDate = new Date(startVal);
+        startDate.setHours(0, 0, 0, 0); // 시작일의 00:00:00
+        const endDate = new Date(endVal);
+        endDate.setHours(23, 59, 59, 999); // 종료일의 23:59:59
+
+        if (startDate > endDate) {
+            alert("종료일이 시작일보다 빠를 수 없습니다.");
+            return;
+        }
+
+        // 기간 내 데이터 필터링
+        periodFilteredData = realizedProfits.filter(p => {
+            const pDate = new Date(p.date);
+            return pDate >= startDate && pDate <= endDate;
+        });
+
+        // 선택 기간 수익 합계 계산
+        const totalProfit = periodFilteredData.reduce((acc, cur) => acc + Number(cur.price), 0);
+
+        // 요약 UI 표시 및 업데이트
+        document.getElementById('period-summary').style.display = 'block';
+        const sumEl = document.getElementById('period-profit-sum');
+        sumEl.innerText = totalProfit.toLocaleString() + "원";
+        sumEl.style.color = totalProfit >= 0 ? 'var(--danger)' : 'var(--target)';
+
+        // 상태 변경 및 리스트 다시 그리기
+        isPeriodSearchActive = true;
+        realizedPage = 1;
+        document.getElementById('selected-date-title').innerText = `${startVal} ~ ${endVal} 조회 결과`;
+        renderRealizedList();
+    }
+
 
     // 추가: 달력 관련 변수
     let currentViewDate = new Date();
@@ -674,14 +738,19 @@
         if (!container) return;
         container.innerHTML = '';
 
-        // 추가: 선택된 날짜 데이터 필터링
-        const filtered = realizedProfits.filter(p => new Date(p.date).toLocaleDateString() === selectedDateStr);
-        
+        // 수정된 로직: 기간 조회 모드일 때와 단일 날짜 선택일 때를 구분
+        let filtered = [];
+        if (isPeriodSearchActive) {
+            filtered = periodFilteredData;
+        } else {
+            filtered = realizedProfits.filter(p => new Date(p.date).toLocaleDateString() === selectedDateStr);
+        }
+
         const totalPages = Math.ceil(filtered.length / realizedLimit) || 1;
         const paged = filtered.slice((realizedPage-1)*realizedLimit, realizedPage*realizedLimit);
         
         if (paged.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-light); font-size:0.8rem;">해당 날짜의 기록이 없습니다.</div>';
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-light); font-size:0.8rem;">해당 기록이 없습니다.</div>';
             if(pager) pager.innerHTML = '';
             return;
         }
@@ -693,8 +762,10 @@
             const prefix = priceValue > 0 ? '+' : '';
             const div = document.createElement('div');
             div.className = 'history-item';
-            div.innerHTML = `<span>${p.name || '이름없음'}</span><b style="color:${color}">${prefix}${priceValue.toLocaleString()}원</b><span onclick="deleteRealized('${p.id}')" style="cursor:pointer; opacity:0.3; padding-left:10px;">×</span>`;
-            container.appendChild(div);
+            // 기간 조회 시에는 항목에 날짜도 작게 보여주면 좋습니다.
+            const dateSmall = `<span style="font-size:0.65rem; color:var(--text-light); margin-right:5px;">${p.date}</span>`;
+            div.innerHTML = `<span>${isPeriodSearchActive ? dateSmall : ''}${p.name || '이름없음'}</span><b style="color:${color}">${prefix}${priceValue.toLocaleString()}원</b><span onclick="deleteRealized('${p.id}')" style="cursor:pointer; opacity:0.3; padding-left:10px;">×</span>`;
+            container.appendChild(div);          
         });
         if(pager) pager.innerHTML = `<button onclick="realizedPage=Math.max(1, realizedPage-1); renderRealizedList();">이전</button> <span>${realizedPage}/${totalPages}</span> <button onclick="realizedPage=Math.min(${totalPages}, realizedPage+1); renderRealizedList();">다음</button>`;
     }
