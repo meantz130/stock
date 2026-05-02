@@ -590,6 +590,9 @@
 
             dayEl.innerText = d;
             dayEl.onclick = () => {
+                isPeriodSearchActive = false; // 기간 조회 모드 해제
+                const summaryEl = document.getElementById('period-summary');
+                if (summaryEl) summaryEl.style.display = 'none'; // 기간 요약 UI 숨김
                 selectedDateStr = dateStr;
                 realizedPage = 1;
                 document.getElementById('selected-date-title').innerText = `${dateStr} 수익 목록`;
