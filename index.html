@@ -1067,12 +1067,31 @@
         if (investEl) investEl.innerText = Math.round(buyTotal).toLocaleString();
         if (evalEl) evalEl.innerText = Math.round(currentEval).toLocaleString();
 
-        // 텍스트 필드 바인딩
-        const fields = ['title', 'description', 'holdCount', 'holdAvg', 'target1', 'target2', 'target3', 'shortTarget', 'shortMemo', 'longTarget', 'longMemo', 'stopLoss', 'stopMemo', 'memo'];
-        fields.forEach(f => {
-            const el = document.getElementById(f === 'title' || f === 'description' ? `item-${f}` : f === 'holdCount' || f === 'holdAvg' ? `hold-${f.replace('hold','')}`.toLowerCase() : f.replace(/([A-Z])/g, '-$1').toLowerCase());
-            if(el) el.value = item[f] || "";
-        });
+        // 텍스트 필드 바인딩 (수정 완료: 매핑 오류 및 타이핑 끊김 방지)
+        const fieldMap = {
+            'title': 'item-title',
+            'description': 'item-description',
+            'holdCount': 'hold-count',
+            'holdAvg': 'hold-avg',
+            'target1': 'target-1',
+            'target2': 'target-2',
+            'target3': 'target-3',
+            'shortTarget': 'short-target',
+            'shortMemo': 'short-memo',
+            'longTarget': 'long-target',
+            'longMemo': 'long-memo',
+            'stopLoss': 'stop-loss',
+            'stopMemo': 'stop-memo',
+            'memo': 'field-memo'
+        };
+
+        for (const [dbKey, htmlId] of Object.entries(fieldMap)) {
+            const el = document.getElementById(htmlId);
+            // 사용자가 입력 중(포커스 상태)일 때는 데이터를 덮어씌우지 않아 글씨가 지워지는 현상 방지
+            if (el && document.activeElement !== el) {
+                el.value = item[dbKey] || "";
+            }
+        }
 
         // 테마 태그 렌더링
         const tagContainer = document.getElementById('theme-tag-display');
