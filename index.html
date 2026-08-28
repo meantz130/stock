@@ -426,6 +426,12 @@
         
         <div class="card">
             <label style="font-size:0.85rem; font-weight:800; display:block; margin-bottom:15px; color:var(--text-dark);">📅 매일 종가 기록</label>
+
+            <!-- [추가된 부분] 그래프를 표시할 캔버스 영역 -->
+            <div style="width: 100%; height: 250px; margin-bottom: 15px; display: none;" id="daily-chart-container">
+                <canvas id="daily-close-chart"></canvas>
+            </div>
+            
             <input type="number" id="manual-close-input" placeholder="오늘의 종가를 입력 후 Enter를 누르세요" onkeydown="handleManualSave(event)" style="border:1px solid #cbd5e1; border-radius:8px; padding:12px; margin-bottom:15px; background:#f8fafc;">
             <div id="history-list"></div>
             <div class="pagination-ctrl" id="history-pager"></div>
@@ -532,6 +538,7 @@
     // 차트 인스턴스 변수
     let stockChart = null;
     let themeChart = null;
+    let dailyChart = null; // [추가된 부분] 매일 종가 차트 변수
     
     // 리스트 렌더링 최적화 변수
     let dragTimer = null;
@@ -1119,6 +1126,7 @@
 
         renderHistory(historyArr);
         renderBuyHistory(); // 매수 기록 렌더링 호출
+        renderDailyChart(historyArr); // [추가된 부분] 종가 데이터로 그래프 그리기 실행
     }
 
     // 테마 추가/삭제
@@ -1300,6 +1308,101 @@
                 <span style="color:var(--accent);">${historyPage} / ${totalPages}</span> 
                 <button onclick="historyPage=Math.min(${totalPages}, historyPage+1); syncEditor();">다음</button>`;
         }
+    }
+
+    // [추가된 부분] 매일 종가 차트 렌더링 함수
+    function renderDailyChart(historyArr) {
+        const container = document.getElementById('daily-chart-container');
+        const canvas = document.getElementById('daily-close-chart');
+        if (!container || !canvas) return;
+
+        // 기록이 2개 이상일 때만 그래프 표시 (비교를 위해)
+        if (!historyArr || historyArr.length < 2) {
+            container.style.display = 'none';
+            if (dailyChart) dailyChart.destroy();
+            return;
+        }
+
+        container.style.display = 'block';
+        const ctx = canvas.getContext('2d');
+
+        // 데이터는 과거순(오래된 순)으로 정렬해야 차트 X축이 자연스럽습니다.
+        const chartData = [...historyArr].reverse();
+        const labels = chartData.map(h => h.date);
+        const dataPoints = chartData.map(h => Number(h.price));
+
+        // Y축 단위(stepSize) 자동 계산
+        const maxPrice = Math.max(...dataPoints);
+        let yStepSize = undefined;
+        if (maxPrice >= 1000000) {
+            yStepSize = 100000; // 백만원 대: 10만 단위
+        } else if (maxPrice >= 100000) {
+            yStepSize = 10000;  // 십만원 대: 만원 단위
+        } else if (maxPrice >= 10000) {
+            yStepSize = 5000;   // 만원 대: 5천원 단위
+        }
+
+        if (dailyChart) dailyChart.destroy();
+
+        dailyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '종가',
+                    data: dataPoints,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointBorderColor: function(context) {
+                        const index = context.dataIndex;
+                        if (index === 0) return '#94a3b8'; // 첫 데이터는 회색
+                        const curr = context.dataset.data[index];
+                        const prev = context.dataset.data[index - 1];
+                        return curr > prev ? 'var(--danger)' : (curr < prev ? 'var(--target)' : '#94a3b8');
+                    },
+                    segment: {
+                        borderColor: ctx => {
+                            if (ctx.p0DataIndex === undefined) return '#94a3b8';
+                            const p0 = ctx.p0.parsed.y;
+                            const p1 = ctx.p1.parsed.y;
+                            if (p1 > p0) return 'var(--danger)'; // 상승 빨간색
+                            if (p1 < p0) return 'var(--target)'; // 하락 파란색
+                            return '#94a3b8'; // 보합 회색
+                        }
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toLocaleString() + '원';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    },
+                    y: {
+                        ticks: {
+                            stepSize: yStepSize,
+                            callback: function(value) { return value.toLocaleString(); },
+                            font: { size: 10 }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     // ==========================================
