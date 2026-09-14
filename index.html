@@ -177,6 +177,26 @@
         .chart-container canvas { max-height: 260px; margin: 0 auto; }
         .info-wrapper { display: flex; gap: 20px; flex-wrap: wrap; }
         .info-box { flex: 1; min-width: 300px; }
+        /* STOCK HUB 간결화 UI */
+        body { background:#f5f7fa; }
+        #main-content { max-width:1440px; margin:0 auto; padding:22px 32px 60px; }
+        .top-bar { position:sticky; top:0; z-index:30; background:rgba(245,247,250,.94); backdrop-filter:blur(12px); padding:12px 0; }
+        .dashboard-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+        .metric-card { background:#fff; border:1px solid #e5eaf1; border-radius:14px; padding:18px; }
+        .metric-label { color:#64748b; font-size:.75rem; font-weight:700; }
+        .metric-value { margin-top:8px; font-size:1.35rem; font-weight:900; letter-spacing:-.04em; }
+        .section-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+        .section-title { font-size:.95rem; font-weight:900; margin:0; }
+        .subtle { color:#64748b; font-size:.78rem; line-height:1.55; }
+        .sync-panel { background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; }
+        .sync-panel .subtle { color:#cbd5e1; }
+        .btn-secondary { background:#fff; color:#0f172a; border:1px solid #dbe2ea; padding:9px 13px; border-radius:9px; font-weight:800; cursor:pointer; }
+        .settings-grid { display:grid; grid-template-columns:1fr auto; gap:10px; }
+        .holding-summary-item { cursor:pointer; }
+        .holding-summary-item:hover { border-color:#94a3b8; }
+        #sidebar .indicator-btn { display:none; }
+        @media(max-width:1050px){.dashboard-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:600px){#main-content{padding:12px 14px 40px}.dashboard-grid{grid-template-columns:1fr 1fr}.card{padding:16px}.settings-grid{grid-template-columns:1fr}.monthly-summary{padding:14px}.theme-flex-row{flex-direction:column;align-items:flex-start}#edit-theme{width:100%!important}}
     </style>
 </head>
 <body>
@@ -234,12 +254,17 @@
 
     <!-- [대시보드 화면 시작] -->
     <div id="main-dashboard">
-        <!-- 1. 총합 요약 카드 -->
-        <div class="card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; border:none; box-shadow:0 10px 25px rgba(15, 23, 42, 0.2);">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div><label style="font-size:0.75rem; opacity:0.7; font-weight:600;">평가 합계</label><div id="main-total-stock" style="font-size:1.4rem; font-weight:900; margin-top:5px;">0원</div></div>
-                <div><label style="font-size:0.75rem; opacity:0.7; font-weight:600;">예수금</label><div id="main-display-cash" style="font-size:1.4rem; font-weight:900; margin-top:5px;">0원</div></div>
-            </div>
+        <div class="dashboard-grid">
+            <div class="metric-card"><div class="metric-label">총자산</div><div id="main-total-asset" class="metric-value">0원</div></div>
+            <div class="metric-card"><div class="metric-label">주식 평가금</div><div id="main-total-stock" class="metric-value">0원</div></div>
+            <div class="metric-card"><div class="metric-label">평가손익</div><div id="main-total-profit" class="metric-value">0원</div></div>
+            <div class="metric-card"><div class="metric-label">예수금</div><div id="main-display-cash" class="metric-value">0원</div></div>
+        </div>
+
+        <div class="card sync-panel">
+            <div class="section-head"><div><h3 class="section-title">토스 종가 동기화</h3><div id="toss-sync-status" class="subtle" style="margin-top:6px;">중계 주소를 설정하면 페이지가 열린 동안 20:00 이후 하루 한 번 자동 동기화합니다.</div></div><button class="btn-secondary" onclick="syncAllTossPrices()">전체 동기화</button></div>
+            <div class="settings-grid"><input id="toss-proxy-url" type="url" placeholder="Cloudflare Worker 주소 (예: https://stock-api.example.workers.dev)" style="background:#fff;color:#0f172a;padding:11px 12px;border-radius:9px;box-sizing:border-box;"><button class="btn-secondary" onclick="saveTossProxyUrl()">연결 주소 저장</button></div>
+            <div class="subtle" style="margin-top:9px;">Client ID와 Client Secret은 이 HTML이나 Firebase DB에 저장하지 않습니다.</div>
         </div>
 
         <!-- 2. 예수금 관리 -->
@@ -340,6 +365,12 @@
                 <input type="text" id="edit-theme" placeholder="테마 입력 후 Enter" onkeydown="handleThemeInput(event)" style="background:#f8fafc;">
                 <div id="theme-tag-display"></div>
             </div>
+        </div>
+
+        <div class="card">
+            <div class="section-head"><div><h3 class="section-title">종목 시세 연결</h3><div class="subtle">토스 API에서 사용하는 국내 종목 심볼을 입력하세요.</div></div><button class="btn-primary" onclick="syncCurrentTossPrice()">종가 가져오기</button></div>
+            <div class="price-box"><label class="metric-label">종목코드</label><input type="text" id="stock-code" maxlength="6" placeholder="예: 삼성전자 005930" oninput="updateField('stockCode',this.value.replace(/\D/g,'').slice(0,6))"></div>
+            <div id="item-sync-status" class="subtle" style="margin-top:10px;">아직 동기화하지 않았습니다.</div>
         </div>
 
         <div class="card">
@@ -544,6 +575,7 @@
     
     // 리스트 렌더링 최적화 변수
     let dragTimer = null;
+    let tossSyncRunning = false;
 
     // ==========================================
     // 3. 인증 및 초기화 (Auth & Init)
@@ -567,6 +599,7 @@
             const userName = user.email ? user.email.split('@')[0] : "사용자";
             document.getElementById('user-display-name').innerText = `${userName}님의 포트폴리오`;
             initApp();
+            loadTossProxyUrl();
         } else {
             document.getElementById('login-overlay').style.display = 'flex';
         }
@@ -602,6 +635,7 @@
             renderCalendar(); 
             calculateMonthlySummary(); 
         });
+        startTossBrowserScheduler();
     }
 
     // ==========================================
@@ -643,11 +677,13 @@
 
     function calculateTotal() {
         let totalStockEvaluation = 0;
+        let totalInvested = 0;
         items.forEach(item => {
             const count = Number(item.holdCount) || 0;
             const history = item.manualHistory ? Object.values(item.manualHistory).sort((a,b) => b.ts - a.ts) : [];
             const latestPrice = history.length > 0 ? Number(history[0].price) : (Number(item.holdAvg) || 0);
             totalStockEvaluation += count * latestPrice;
+            totalInvested += count * (Number(item.holdAvg) || 0);
         });
         
         document.getElementById('main-total-stock').innerText = totalStockEvaluation.toLocaleString() + "원";
@@ -655,6 +691,9 @@
         
         const totalAsset = totalStockEvaluation + userCash;
         document.getElementById('total-asset-value').innerText = totalAsset.toLocaleString() + "원";
+        const assetEl=document.getElementById('main-total-asset'); const profitEl=document.getElementById('main-total-profit');
+        if(assetEl) assetEl.innerText=Math.round(totalAsset).toLocaleString()+"원";
+        if(profitEl){const p=totalStockEvaluation-totalInvested;profitEl.innerText=`${p>0?'+':''}${Math.round(p).toLocaleString()}원`;profitEl.style.color=p>=0?'var(--danger)':'var(--target)';}
     }
 
     // ==========================================
@@ -707,6 +746,7 @@
             const avg = Number(item.holdAvg || 0).toLocaleString();
             const t3 = item.target3 ? Number(item.target3).toLocaleString() : '-';
             const count = item.holdCount || 0;
+            const latest = item.manualHistory ? Object.values(item.manualHistory).sort((a,b)=>b.ts-a.ts)[0] : null;
 
             div.innerHTML = `
                 <div style="font-weight:bold; display:flex; align-items:center;">
@@ -719,8 +759,8 @@
                     <span style="font-size:0.75rem; color:var(--text-light); font-weight:normal; margin-left:4px; pointer-events:none;">(${count})</span>
                 </div>
                 <div class="item-row" style="pointer-events:none; padding-left:24px;">
-                    <div class="item-info-left">평단: ${avg}</div>
-                    <div class="item-info-right">희망가: ${t3}</div>
+                    <div class="item-info-left">${item.stockCode||'코드 미설정'} · ${latest?Number(latest.price).toLocaleString()+'원':'종가 없음'}</div>
+                    <div class="item-info-right">목표 ${t3}</div>
                 </div>`;
             container.appendChild(div);
         });
@@ -846,6 +886,7 @@
             const sign = item.diff > 0 ? '+' : '';
             const div = document.createElement('div');
             div.className = 'holding-summary-item';
+            div.onclick = () => openStockEditor(item.id);
             div.innerHTML = `
                 <div class="holding-summary-top">
                     <div>
@@ -1080,6 +1121,7 @@
         const fieldMap = {
             'title': 'item-title',
             'description': 'item-description',
+            'stockCode': 'stock-code',
             'holdCount': 'hold-count',
             'holdAvg': 'hold-avg',
             'target1': 'target-1',
@@ -1101,6 +1143,8 @@
                 el.value = item[dbKey] || "";
             }
         }
+        const syncStatus=document.getElementById('item-sync-status');
+        if(syncStatus) syncStatus.textContent=item.lastTossSyncAt?`마지막 동기화: ${new Date(item.lastTossSyncAt).toLocaleString('ko-KR')} · ${Number(item.lastTossPrice||0).toLocaleString()}원`:'아직 동기화하지 않았습니다.';
 
         // 테마 태그 렌더링
         const tagContainer = document.getElementById('theme-tag-display');
@@ -1258,6 +1302,40 @@
             e.target.value = '';
         }
     }
+
+    function openStockEditor(id){currentId=id;historyPage=1;buyHistoryPage=1;document.getElementById('main-dashboard').style.display='none';document.getElementById('profile-section').style.display='none';document.getElementById('editor').style.display='block';syncEditor();renderList();window.scrollTo({top:0,behavior:'smooth'});}
+
+    function normalizeProxyUrl(value){return String(value||'').trim().replace(/\/+$/,'');}
+    function loadTossProxyUrl(){const el=document.getElementById('toss-proxy-url');if(el)el.value=localStorage.getItem('stockHubTossProxyUrl')||'';}
+    function saveTossProxyUrl(){const value=normalizeProxyUrl(document.getElementById('toss-proxy-url').value);if(value&&!/^https:\/\//i.test(value))return alert('HTTPS 주소를 입력해주세요.');localStorage.setItem('stockHubTossProxyUrl',value);alert(value?'연결 주소를 저장했습니다.':'연결 주소를 비웠습니다.');}
+
+    async function requestTossClose(item){
+        const proxy=normalizeProxyUrl(localStorage.getItem('stockHubTossProxyUrl')); const symbol=String(item.stockCode||'').trim();
+        if(!proxy)throw new Error('먼저 토스 중계 주소를 저장하세요.'); if(!/^\d{6}$/.test(symbol))throw new Error('종목코드 6자리를 확인하세요.');
+        const user=auth.currentUser; if(!user)throw new Error('로그인이 필요합니다.'); const idToken=await user.getIdToken();
+        const response=await fetch(`${proxy}/close?symbol=${encodeURIComponent(symbol)}`,{headers:{Authorization:`Bearer ${idToken}`},cache:'no-store'});
+        const json=await response.json().catch(()=>({})); if(!response.ok)throw new Error(json.error||`중계 서버 오류(${response.status})`);
+        const price=Number(json.closePrice); const date=String(json.date||''); if(!Number.isFinite(price)||price<=0||!date)throw new Error('종가 응답 형식이 올바르지 않습니다.');
+        return{price:Math.round(price),date,ts:Number(json.timestamp)||Date.now()};
+    }
+
+    async function saveTossClose(item,quote){
+        const existing=item.manualHistory?Object.entries(item.manualHistory).find(([,v])=>v.dateKey===quote.date||v.date===quote.date):null;
+        const record={date:quote.date,dateKey:quote.date,price:quote.price,ts:quote.ts,source:'toss'};
+        if(existing)await db.ref(`stocks/${item.id}/manualHistory/${existing[0]}`).update(record);else await db.ref(`stocks/${item.id}/manualHistory`).push(record);
+        await db.ref(`stocks/${item.id}`).update({lastTossSyncAt:Date.now(),lastTossPrice:quote.price});
+    }
+
+    async function syncCurrentTossPrice(){const item=items.find(i=>i.id===currentId);const status=document.getElementById('item-sync-status');if(!item)return;try{status.textContent='토스 종가를 확인하는 중...';const q=await requestTossClose(item);await saveTossClose(item,q);status.textContent=`${q.date} 종가 ${q.price.toLocaleString()}원을 저장했습니다.`;}catch(e){status.textContent=`동기화 실패: ${e.message}`;}}
+
+    async function syncAllTossPrices(silent=false){
+        if(tossSyncRunning)return;const targets=items.filter(i=>/^\d{6}$/.test(String(i.stockCode||'')));const status=document.getElementById('toss-sync-status');if(!targets.length){if(!silent)alert('종목코드가 설정된 종목이 없습니다.');return;}
+        tossSyncRunning=true;let ok=0,failed=0;status.textContent=`${targets.length}개 종목을 확인하는 중...`;
+        for(const item of targets){try{const q=await requestTossClose(item);await saveTossClose(item,q);ok++;}catch(e){failed++;}}
+        const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());localStorage.setItem('stockHubLastTossSync',today);status.textContent=`완료: 성공 ${ok}개${failed?` · 실패 ${failed}개`:''} · ${new Date().toLocaleTimeString('ko-KR')}`;tossSyncRunning=false;
+    }
+
+    function startTossBrowserScheduler(){if(window.__tossScheduler)return;window.__tossScheduler=setInterval(()=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));const today=`${p.year}-${p.month}-${p.day}`;if(Number(p.hour)>=20&&localStorage.getItem('stockHubLastTossSync')!==today)syncAllTossPrices(true);},60000);}
 
     function deleteHistory(k) { 
         if(confirm("이 종가 기록을 삭제하시겠습니까?")) db.ref(`stocks/${currentId}/manualHistory/${k}`).remove(); 
@@ -1579,3 +1657,4 @@
 </script>
 </body>
 </html>
+
