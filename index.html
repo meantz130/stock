@@ -203,7 +203,9 @@ body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',-apple-system,Blink
 @media(max-width:480px){.metric-grid{grid-template-columns:1fr 1fr;gap:10px}.metric:first-child{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:10px;padding:16px}.metric:first-child .metric-value{margin:0;font-size:21px}.metric:first-child .metric-foot{grid-column:1/-1;margin-top:8px}.metric:first-child .metric-foot b{display:inline;margin-left:5px}.metric:not(:first-child){padding:16px}.metric:not(:first-child) .metric-value{font-size:19px}.metric .sub-label{font-size:11px}}
 
     </style>
-</head>
+<style>
+.api-panel{border:2px solid #acd9c3;background:#f5fbf7;margin-bottom:22px;border-radius:12px;padding:20px}.api-panel summary{font-size:16px;font-weight:750;cursor:pointer;color:#146344}.api-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}.api-fields label{display:block;font-size:13px;font-weight:700}.api-fields input{display:block;width:100%;box-sizing:border-box;margin-top:8px;border:2px solid #8dbfa4;background:white;padding:12px;border-radius:8px}.api-actions{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.api-help{font-size:13px;line-height:1.8;color:#4b6655}.index-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}.index-card{padding:20px;background:white;border:1px solid #dfe8e1;border-radius:12px}.index-card strong{font-size:26px;display:block;margin:10px 0}.index-card svg{width:100%;height:130px}.code-card{border:2px solid #a8ceb8!important;background:#f5fbf7}.code-card input{border:2px solid #87b79c;padding:12px;border-radius:8px}.code-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}[hidden]{display:none!important}@media(max-width:700px){.api-fields,.index-grid{grid-template-columns:1fr}}
+</style></head>
 <body>
 
 <div id="loading-overlay">
@@ -239,7 +241,9 @@ body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',-apple-system,Blink
     <header class="top-bar"><div class="breadcrumb"><button class="menu-toggle" aria-label="메뉴 열기" onclick="toggleMenu()">☰</button><span>Workspace</span><span class="slash">/</span><strong id="page-title">대시보드</strong></div><div class="top-meta"><span id="today-label"></span><span id="connection-status" class="status-pill">로그인 대기</span></div></header>
     <section id="main-dashboard" aria-label="대시보드">
       <div class="page-heading"><div><div class="eyebrow">MY PORTFOLIO</div><h1>투자의 흐름을 한눈에.</h1><p>보유 자산과 손익을 살펴보고, 다음 판단을 준비하세요.</p></div><button class="secondary-btn" onclick="showRealized()">수익실현 관리 <span>↗</span></button></div>
-      <div class="asset-hero">
+      
+<section class="api-panel"><h2 style="font-size:18px;margin:0 0 12px">종가 업데이트</h2><p class="api-help">종목코드만 등록하고 버튼을 누르세요. 기존 기록이 있으면 가장 오래된 기록일부터 누락된 거래일을 확인합니다. 새 종목은 최근 90일부터 시작합니다. 당일 종가는 <b>한국시간 20시 이후</b>에 포함합니다.</p><div class="api-actions"><button id="update-closes" class="btn-primary" onclick="updateAllCloses()">↻ 종가 업데이트 · 빠진 날짜 채우기</button><label style="font-size:13px">다른 시작일 지정 (선택)<input id="backfill-start" type="date" style="padding:8px;border:1px solid #9cbcaa;border-radius:6px;margin-left:8px"></label></div><p id="price-status" class="api-help" role="status" aria-live="polite">API 키·별도 실행 프로그램 없이 사용합니다. 기존 수동 기록은 덮어쓰지 않습니다.</p><div id="price-results" class="api-help"></div><p class="api-help">Yahoo Finance의 공개 일봉을 외부 중계 서비스로 조회합니다. 중계에는 종목코드·조회기간만 전달하며, 로그인 정보·보유량·Firebase 토큰은 보내지 않습니다. 시세 제공 지연이나 연결 제한이 있으면 실패 내역에서 확인할 수 있습니다.</p></section><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span>국내 시장 · 최근 60거래일 일봉</span><button class="text-btn" onclick="refreshIndices()">지수 새로고침 ↻</button></div><div class="index-grid"><article class="index-card" id="index-KOSPI">코스피<strong>—</strong><p>지수 새로고침을 눌러주세요.</p></article><article class="index-card" id="index-KOSDAQ">코스닥<strong>—</strong><p>지수 새로고침을 눌러주세요.</p></article></div>
+<div class="asset-hero">
         <div class="hero-total"><span class="sub-label">총 자산</span><div id="dash-total" class="hero-number">0<span>원</span></div><div class="hero-note"><span class="tiny-dot"></span> 보유 주식 평가금 + 예수금</div></div>
         <div class="hero-part"><span class="sub-label">주식 평가금</span><strong id="main-total-stock">0원</strong><span id="held-count" class="muted">보유 0종목</span></div>
         <div class="hero-part"><span class="sub-label">예수금</span><strong id="main-display-cash">0원</strong><button class="text-btn" onclick="openCash()">금액 수정 ↗</button></div>
@@ -337,9 +341,9 @@ body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',-apple-system,Blink
                 placeholder="이 주식에 대한 간단한 설명을 기록해두세요">
         </div>
 
-        <div class="edit-item card" style="padding-top:20px;">
+        <div class="card code-card"><label style="display:block;margin-bottom:12px;font-weight:800">종목코드 입력 · 종가 업데이트 대상</label><div class="code-row"><input id="stock-code" maxlength="6" placeholder="예: 005930" aria-label="국내 종목코드" onkeydown="if(event.key==='Enter')saveStockCode()"><button class="btn-primary" onclick="saveStockCode()">종목 확인 · 저장</button><span id="stock-market">시장 자동 확인 대기</span></div><p class="api-help">국내 종목코드 6자리를 입력하면 공개 시세에서 종목과 코스피·코스닥을 자동으로 확인합니다. 기존 종목명은 유지합니다. 코드 변경 후에는 새 종목 기록이 섞이지 않도록 별도 종목을 추가하는 것을 권장합니다.</p></div><div class="edit-item card" style="padding-top:20px;">
             <label style="font-size:0.85rem; font-weight:800; margin-bottom:12px; color:var(--text-dark);">테마 / 카테고리</label>
-            <div class="theme-flex-row">
+            <div class="theme-flex-row"><button class="text-btn" type="button" onclick="editThemes()">테마 수정 / 추가</button>
                 <input type="text" id="edit-theme" placeholder="테마 입력 후 Enter" onkeydown="handleThemeInput(event)" style="background:#f8fafc;">
                 <div id="theme-tag-display"></div>
             </div>
@@ -757,6 +761,7 @@ body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',-apple-system,Blink
         // 텍스트 필드 바인딩 (수정 완료: 매핑 오류 및 타이핑 끊김 방지)
         const fieldMap = {
             'title': 'item-title',
+            'code': 'stock-code',
             'description': 'item-description',
             'holdCount': 'hold-count',
             'holdAvg': 'hold-avg',
@@ -797,7 +802,8 @@ body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',-apple-system,Blink
                 });
             }
         }
-        document.getElementById('edit-theme').value = ""; 
+        document.getElementById('stock-market').textContent = ({KOSPI:'코스피',KOSDAQ:'코스닥',KR_ETC:'국내 기타시장'}[item.market]||'시장 자동 확인 대기');
+        const ti=document.getElementById('edit-theme');if(document.activeElement!==ti){ti.value='';ti.hidden=!!item.theme;} 
     
         // 매수 입력창 오늘 날짜로 초기화
         const buyDateEl = document.getElementById('buy-date');
@@ -832,6 +838,7 @@ body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',-apple-system,Blink
         let currentThemes = item.theme.split(',').map(t => t.trim()).filter(t => t);
         currentThemes = currentThemes.filter(t => t !== themeToRemove); 
         updateField('theme', currentThemes.join(','));
+        const input=document.getElementById('edit-theme');input.hidden=false;input.focus();
     }
 
     // ==========================================
@@ -1081,5 +1088,26 @@ body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',-apple-system,Blink
     renderCalendar();renderRealizedList();refreshDashboard();
 
 </script>
-</body>
+<script>
+const PUBLIC_PROXIES=[url=>'https://proxy.cors.dev/'+url,url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url)];
+let priceUpdateBusy=false;
+function priceStatus(message){document.getElementById('price-status').textContent=message;}
+function koreaDate(value=Date.now()){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));}
+function eligibleDay(day,now=Date.now()){const today=koreaDate(now),hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Seoul',hour:'2-digit',hourCycle:'h23'}).format(new Date(now)));return day<today||(day===today&&hour>=20);}
+function recordDay(v){const p=String(v||'').match(/^(\d{2}|\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})\.?$/);if(!p)return '';const y=Number(p[1])+(p[1].length===2?2000:0),m=Number(p[2]),d=Number(p[3]);const key=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const stamp=Date.parse(key+'T00:00:00+09:00');return Number.isFinite(stamp)&&koreaDate(stamp)===key?key:'';}
+function decodeChart(body,symbol){const r=body?.chart?.result?.[0];if(!r||body.chart.error)throw Error('시세 데이터가 없습니다.');if(r.meta?.symbol?.toUpperCase()!==symbol.toUpperCase())throw Error('응답 종목코드가 일치하지 않습니다.');const close=r.indicators?.quote?.[0]?.close||[];const candles=(r.timestamp||[]).map((t,i)=>({day:koreaDate(t*1000),price:close[i]})).filter(c=>typeof c.price==='number'&&Number.isFinite(c.price)&&c.price>0);return {meta:r.meta,candles};}
+async function publicChart(symbol,start,end){const params=new URLSearchParams({interval:'1d',period1:String(Math.floor(start/1000)),period2:String(Math.ceil(end/1000)),includePrePost:'false'});const url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?'+params;let reason='';for(const proxy of PUBLIC_PROXIES){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);try{const res=await fetch(proxy(url),{signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});if(!res.ok)throw Error('HTTP '+res.status);const body=await res.json();return decodeChart(body,symbol);}catch(e){reason=e.name==='AbortError'?'응답 시간 초과':e.message;}finally{clearTimeout(timer);}}throw Error('공개 시세 연결 실패 ('+reason+'). 잠시 후 다시 시도하세요.');}
+async function identifyCode(code){const start=Date.now()-14*86400000;for(const [suffix,market] of [['KS','KOSPI'],['KQ','KOSDAQ']]){try{const data=await publicChart(code+'.'+suffix,start,Date.now());if(data.meta.currency!=='KRW')throw Error('국내 원화 종목이 아닙니다.');return {...data,symbol:code+'.'+suffix,market};}catch(e){if(suffix==='KQ')throw Error('종목 확인 실패: '+e.message);}}}
+async function saveStockCode(){const sid=currentId,code=document.getElementById('stock-code').value.trim().toUpperCase();try{if(!db||demoMode)throw Error('실제 계정으로 로그인해주세요.');if(!/^[0-9A-Z]{6}$/.test(code))throw Error('국내 종목코드 6자리를 입력해주세요.');const old=items.find(i=>i.id===sid);if(old?.code&&old.code!==code&&old.manualHistory&&Object.keys(old.manualHistory).length)throw Error('기록이 있는 종목은 코드 변경 대신 새 종목으로 추가해주세요.');toast('종목과 시장을 확인 중입니다…');const info=await identifyCode(code);const patch={code,market:info.market,priceSymbol:info.symbol};if(!old?.title||old.title==='새 종목')patch.title=info.meta.longName||info.meta.shortName||code;await db.ref('stocks/'+sid).update(patch);toast('종목코드와 '+(info.market==='KOSPI'?'코스피':'코스닥')+'를 저장했습니다.');}catch(e){toast(e.message);}}
+function editThemes(){const input=document.getElementById('edit-theme');input.hidden=false;input.focus();}
+function planMissing(stock,candles,now=Date.now()){const recorded=new Set(Object.values(stock.manualHistory||{}).map(h=>recordDay(h.date)).filter(Boolean));const unique=new Map();for(const c of candles)if(eligibleDay(c.day,now)&&!recorded.has(c.day)&&Number.isFinite(c.price)&&c.price>0)unique.set(c.day,{date:c.day,price:Math.round(c.price),ts:Date.parse(c.day+'T15:30:00+09:00'),source:'yahoo-daily'});return unique;}
+async function updateAllCloses(){if(priceUpdateBusy)return;if(!db||demoMode||!auth?.currentUser)return toast('실제 계정으로 로그인한 뒤 업데이트해주세요.');const startInput=document.getElementById('backfill-start').value;if(startInput&&(!recordDay(startInput)||startInput>koreaDate()))return toast('오늘 이전의 올바른 시작일을 선택해주세요.');priceUpdateBusy=true;const button=document.getElementById('update-closes');button.disabled=true;button.textContent='누락 종가 확인 중…';const results=[];let total=0,failures=0;document.getElementById('price-results').textContent='';try{const snapshot=await db.ref('stocks').once('value');const list=Object.entries(snapshot.val()||{});for(let i=0;i<list.length;i++){const [sid,stock]=list[i],name=stock.title||stock.code||'이름 없는 종목';priceStatus(`${i+1}/${list.length} · ${name} 확인 중…`);if(!/^[0-9A-Z]{6}$/.test(stock.code||'')){results.push(name+': 종목코드가 없어 제외');continue;}try{let symbol=stock.priceSymbol,market=stock.market;if(!symbol||!['KOSPI','KOSDAQ'].includes(market)){const info=await identifyCode(stock.code);symbol=info.symbol;market=info.market;}
+const days=Object.values(stock.manualHistory||{}).map(h=>recordDay(h.date)).filter(Boolean).sort();const today=koreaDate(),fallback=koreaDate(Date.now()-90*86400000);const startDay=startInput||days[0]||fallback;let cursor=Date.parse(startDay+'T00:00:00+09:00'),end=Date.now();if(cursor>end)throw Error('조회 시작일을 확인해주세요.');const candles=[];while(cursor<end){const upper=Math.min(end,cursor+365*86400000);const response=await publicChart(symbol,cursor,upper);if(response.meta.currency!=='KRW')throw Error('원화 종목만 지원합니다.');candles.push(...response.candles);cursor=upper;}
+let saved=0;const result=await db.ref('stocks/'+sid).transaction(current=>{saved=0;if(!current||current.code!==stock.code)return;const missing=planMissing(current,candles);if(!missing.size&&current.market===market&&current.priceSymbol===symbol)return;current.market=market;current.priceSymbol=symbol;current.manualHistory=current.manualHistory||{};for(const [day,record]of missing){current.manualHistory['public_'+day]=record;saved++;}return current;});total+=result.committed?saved:0;const last=candles.filter(c=>eligibleDay(c.day)).map(c=>c.day).sort().at(-1);results.push(`${name}: ${result.committed?saved:0}건 추가${last?' · 제공 최신일 '+last:' · 확정 일봉 없음'}${startInput?'':' · '+startDay+'부터 확인'}`);
+}catch(e){failures++;results.push(name+': 실패 · '+e.message);}document.getElementById('price-results').textContent=results.join('\n');document.getElementById('price-results').style.whiteSpace='pre-line';}
+priceStatus(`완료 · 종가 ${total}건 추가 / 실패 ${failures}종목. ${eligibleDay(koreaDate())?'오늘 종가도 제공되는 경우 포함했습니다.':'오늘 종가는 20시 이후 다시 눌러주세요.'}`);await refreshIndices(false);
+}catch(e){priceStatus('저장 연결 오류: '+e.message);}finally{priceUpdateBusy=false;button.disabled=false;button.textContent='↻ 종가 업데이트 · 빠진 날짜 채우기';}}
+async function refreshIndices(showStatus=true){let failed=0;for(const [symbol,label,id] of [['^KS11','코스피','KOSPI'],['^KQ11','코스닥','KOSDAQ']]){const el=document.getElementById('index-'+id);try{const data=await publicChart(symbol,Date.now()-100*86400000,Date.now());const a=data.candles.filter(c=>eligibleDay(c.day)).slice(-60);if(!a.length)throw Error('확정 일봉 없음');const prices=a.map(c=>c.price),last=prices.at(-1),prev=prices.at(-2),diff=prev==null?null:last-prev,lo=Math.min(...prices),range=Math.max(...prices)-lo||1,color=diff>=0?'#cf544a':'#397bb9';const points=prices.map((p,i)=>`${15+i*370/Math.max(1,prices.length-1)},${110-(p-lo)/range*90}`).join(' ');el.innerHTML=`<span>${label}</span><strong>${last.toLocaleString('ko-KR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong><span style="color:${color}">${diff===null?'전일 비교 없음':(diff>=0?'+':'')+diff.toFixed(2)+' ('+(diff>=0?'+':'')+(diff/prev*100).toFixed(2)+'%)'}</span><svg viewBox="0 0 400 130" role="img" aria-label="${label} 일봉 종가 추이"><polyline points="${points}" fill="none" stroke="${color}" stroke-width="2.5"/></svg><small>${esc(a[0].day)} ~ ${esc(a.at(-1).day)} · 확정 일봉 종가 / Yahoo Finance</small>`;}catch(e){failed++;let note=el.querySelector('.index-error');if(!note){note=document.createElement('p');note.className='index-error';el.appendChild(note);}note.textContent='지수 조회 실패 · 다시 눌러주세요.';}}if(failed&&showStatus)priceStatus('지수 연결이 원활하지 않습니다. 잠시 후 다시 시도해주세요.');}
+
+</script></body>
 </html>
